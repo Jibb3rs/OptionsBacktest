@@ -11,7 +11,7 @@ jobs:
   # macOS — produces OptionsBacktest-macOS.dmg
   # ─────────────────────────────────────────────
   build-macos:
-    runs-on: macos-13   # Intel runner — broadest Mac compatibility
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
