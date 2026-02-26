@@ -59,7 +59,7 @@ class LicenseDialog(QDialog):
         # Divider
         div = QFrame()
         div.setFrameShape(QFrame.HLine)
-        div.setStyleSheet(f"color: {C.BORDER};")
+        div.setStyleSheet(f"color: {C['card_border']};")
         layout.addWidget(div)
 
         # Status banner (for expired / invalid)
