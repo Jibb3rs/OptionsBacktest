@@ -1,0 +1,52 @@
+{
+  "RSI": {
+    "name": "RSI",
+    "category": "momentum",
+    "desc": "Overbought >70, Oversold <30"
+  },
+  "MACD": {
+    "name": "MACD",
+    "category": "momentum",
+    "desc": "Trend-following momentum indicator"
+  },
+  "STOCHASTIC": {
+    "name": "Stochastic",
+    "category": "momentum",
+    "desc": "Momentum oscillator (>80 overbought, <20 oversold)"
+  },
+  "ATR": {
+    "name": "ATR",
+    "category": "volatility",
+    "desc": "Measures market volatility"
+  },
+  "BBANDS": {
+    "name": "Bollinger Bands",
+    "category": "volatility",
+    "desc": "Volatility bands around moving average"
+  },
+  "VIX": {
+    "name": "VIX Filter",
+    "category": "volatility",
+    "desc": "Market fear gauge (<20 calm, >30 fearful)"
+  },
+  "MA": {
+    "name": "Moving Average",
+    "category": "trend",
+    "desc": "Simple or Exponential moving average (price above/below)"
+  },
+  "ADX": {
+    "name": "ADX",
+    "category": "trend",
+    "desc": "Trend strength (>25 strong, <20 weak)"
+  },
+  "SUPERTREND": {
+    "name": "SuperTrend",
+    "category": "trend",
+    "desc": "ATR-based trend indicator"
+  },
+  "VWAP": {
+    "name": "VWAP",
+    "category": "volume",
+    "desc": "Volume-weighted average price (price above/below)"
+  }
+}

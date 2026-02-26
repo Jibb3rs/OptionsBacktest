@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.Python
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+
+# PyInstaller build artifacts
+build/OptionsBacktest/
+build/OptionsBacktest.app/
+build/LicenseGenerator/
+build/LicenseGenerator.app/
+build/icon.iconset/
+dist/
+*.spec.bak
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Private key — NEVER commit this
+licensing/keys/private.key
+
+# User data (generated at runtime)
+output/
+presets/
+results/
+templates/
+settings.json
+
+# Test/scratch files
+*.pyc
+.pytest_cache/

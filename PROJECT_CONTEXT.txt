@@ -1,0 +1,1250 @@
+================================================================================
+OPTIONS BACKTESTING SYSTEM - COMPLETE PROJECT CONTEXT
+================================================================================
+
+PROJECT OVERVIEW
+================================================================================
+
+This is a comprehensive Python-based options backtesting system with a modern
+PyQt5 + Apache ECharts GUI that allows traders to backtest options strategies
+on historical data using QuantConnect's platform. The system generates production-ready QuantConnect 
+algorithm code with advanced entry filters, technical indicators, and risk 
+management features.
+
+CREATOR: Justin (experienced forex trader and developer)
+BACKGROUND: 
+- Built sophisticated "JustinDPC" (Day Performance Concept) EA for MetaTrader 4
+- Expanding into options trading with systematic approach
+- Professional experience: ByteDance, BlackRock, J.P. Morgan Chase
+- Education: University of Essex (Bachelor's), Temasek Polytechnic (Diploma)
+- Skills: MQL4, Python, API integration (Tiger Brokers), multiple trading platforms
+
+PROJECT GOALS:
+1. Backtest options strategies with professional-grade filters
+2. Generate QuantConnect code automatically (no manual coding)
+3. Analyze trade performance with MAE/MFE metrics
+4. Compare multiple strategies side-by-side
+5. Support 16+ technical indicators for entry filtering
+6. Enable advanced filters (VIX, IV Rank, Market Profile, Greeks)
+7. Provide institutional-quality backtesting for retail traders
+
+================================================================================
+TECHNICAL STACK
+================================================================================
+
+LANGUAGE: Python 3.8 - 3.14 (3.14.2 currently installed on dev machine)
+GUI FRAMEWORK: PyQt5 + PyQtWebEngine (modern Qt-based GUI with ECharts)
+CHARTING: Apache ECharts (interactive JavaScript charts via QWebEngineView)
+TARGET PLATFORM: QuantConnect (cloud-based backtesting)
+DATA ANALYSIS: pandas, numpy
+VISUALIZATION: ECharts (primary), matplotlib (legacy/export)
+FILE HANDLING: openpyxl, xlsxwriter (Excel support)
+
+DEPENDENCIES (requirements.txt):
+- PyQt5==5.15.11         # Modern GUI framework
+- PyQtWebEngine==5.15.7  # Web view for ECharts
+- pandas==2.0.3          # Data manipulation
+- numpy==1.24.3          # Numerical computing
+- matplotlib==3.7.2      # Plotting (legacy)
+- seaborn==0.12.2        # Statistical visualization
+- openpyxl==3.1.2        # Excel reading
+- xlsxwriter==3.1.9      # Excel writing
+- Pillow==10.0.0         # Image processing
+- python-dateutil==2.8.2 # Date utilities
+
+================================================================================
+PROJECT STRUCTURE
+================================================================================
+
+OptionsBacktest/
+│
+├── config/                      # Configuration files
+│   ├── indicators.json          # Metadata for 16 technical indicators
+│   ├── settings.json            # User preferences (theme, defaults)
+│   └── strategies.json          # Strategy metadata and descriptions
+│
+├── core/                        # Core business logic (if exists)
+│
+├── gui/                         # GUI components (PyQt5 + ECharts)
+│   ├── __init__.py
+│   ├── assets/
+│   │   └── echarts.min.js       # Apache ECharts library (~1MB)
+│   ├── pyqt_main_window.py      # Main window + tab manager (PyQt5)
+│   ├── pyqt_config_tab.py       # Strategy configuration tab
+│   ├── pyqt_advanced_tab.py     # Advanced filters + indicators tab ⭐
+│   ├── pyqt_analysis_tab.py     # Trade analysis with ECharts
+│   ├── pyqt_compare_tab.py      # Multi-strategy comparison
+│   ├── pyqt_settings_tab.py     # App settings (theme, defaults)
+│   ├── pyqt_code_popup.py       # Generated code display dialog
+│   ├── pyqt_theme.py            # Dark theme colors + stylesheet
+│   ├── echarts_widget.py        # ECharts wrapper widget ⭐
+│   ├── advanced_filters.py      # Filter classes (VIX, IV Rank, etc.)
+│   ├── indicators.py            # 16 technical indicators
+│   ├── main_window.py           # Legacy Tkinter (deprecated)
+│   └── scroll_helper.py         # Trackpad scrolling helper
+│
+├── strategies/                  # Options strategy implementations (22 total)
+│   ├── __init__.py
+│   ├── base_strategy.py         # Code generation engine ⭐
+│   │
+│   │  # NEUTRAL STRATEGIES (4)
+│   ├── iron_condor.py           # 4-leg neutral (sell OTM put/call spreads)
+│   ├── iron_butterfly.py        # 4-leg ATM (sell ATM, buy OTM wings)
+│   ├── short_strangle.py        # 2-leg OTM premium collection
+│   ├── short_straddle.py        # 2-leg ATM premium collection
+│   │
+│   │  # BULLISH STRATEGIES (3)
+│   ├── bull_put_spread.py       # 2-leg credit spread
+│   ├── bull_call_spread.py      # 2-leg debit spread
+│   ├── long_call.py             # Single leg directional
+│   │
+│   │  # BEARISH STRATEGIES (3)
+│   ├── bear_call_spread.py      # 2-leg credit spread
+│   ├── bear_put_spread.py       # 2-leg debit spread
+│   ├── long_put.py              # Single leg directional
+│   │
+│   │  # VOLATILITY STRATEGIES (3)
+│   ├── long_strangle.py         # 2-leg buy OTM both sides
+│   ├── long_straddle.py         # 2-leg buy ATM both sides
+│   ├── butterfly_spread.py      # 4-leg (buy 1, sell 2, buy 1)
+│   │
+│   │  # MULTI-EXPIRATION (2)
+│   ├── calendar_spread.py       # Same strike, different expirations
+│   ├── diagonal_spread.py       # Different strikes + expirations
+│   │
+│   │  # ADVANCED STRATEGIES (3)
+│   ├── ratio_spread.py          # Asymmetric (buy 1, sell 2+)
+│   ├── jade_lizard.py           # Short put + bear call spread
+│   │
+│   │  # STOCK-BASED STRATEGIES (3)
+│   ├── covered_call.py          # 100 shares + sell call
+│   ├── protective_put.py        # 100 shares + buy put
+│   ├── collar.py                # Stock + buy put + sell call
+│   │
+│   │  # CUSTOM BUILDER (1)
+│   └── custom_strategy.py       # User-defined leg combinations
+│
+├── output/                      # Generated QuantConnect code
+├── presets/                     # Saved configurations
+├── results/                     # Backtest results CSV files
+├── templates/                   # Code templates (if exists)
+│
+├── main.py                      # Legacy Tkinter entry point
+├── main_pyqt.py                 # PyQt5 entry point (recommended) ⭐
+├── requirements.txt             # Python dependencies
+├── test_installation.py         # Installation verification script
+│
+└── Documentation/
+    ├── INDICATORS_README.md     # Technical indicators guide
+    ├── FRESH_INSTALL_GUIDE.md   # Setup guide for new computers
+    └── PROJECT_CONTEXT.txt      # This file
+
+================================================================================
+IMPLEMENTED STRATEGIES (22 TOTAL = 21 PRESET + 1 CUSTOM)
+================================================================================
+
+NEUTRAL STRATEGIES (4):
+-----------------------
+1. Iron Condor
+   - Legs: Sell OTM put spread + Sell OTM call spread (4 legs)
+   - Win Rate: ~84% with 0.16 delta
+   - Use Case: Range-bound markets, high IV
+   - Max Profit: Net credit received
+   - Max Loss: Width of spread - credit
+
+2. Iron Butterfly
+   - Legs: Sell ATM put/call + Buy OTM put/call (4 legs)
+   - Win Rate: ~70-80%
+   - Use Case: Expect price to stay at current level
+   - Max Profit: Net credit at ATM strike
+   - Max Loss: Strike width - credit
+
+3. Short Strangle
+   - Legs: Sell OTM put + Sell OTM call (2 legs)
+   - Win Rate: ~70-85% depending on delta
+   - Use Case: High IV, expect range-bound
+   - Max Profit: Total credit received
+   - Max Loss: Unlimited (in practice, very large)
+
+4. Short Straddle
+   - Legs: Sell ATM put + Sell ATM call (2 legs)
+   - Win Rate: ~65-75%
+   - Use Case: Very high IV, expect no movement
+   - Max Profit: Total credit at current price
+   - Max Loss: Unlimited (in practice, very large)
+
+BULLISH STRATEGIES (3):
+-----------------------
+5. Bull Put Spread
+   - Legs: Sell higher strike put + Buy lower strike put (2 legs)
+   - Win Rate: ~70-85%
+   - Use Case: Moderately bullish, defined risk
+   - Max Profit: Net credit received
+   - Max Loss: Strike width - credit
+
+6. Bull Call Spread
+   - Legs: Buy lower strike call + Sell higher strike call (2 legs)
+   - Win Rate: ~50-60%
+   - Use Case: Bullish, limited capital
+   - Max Profit: Strike width - debit paid
+   - Max Loss: Net debit paid
+
+7. Long Call
+   - Legs: Buy single call option (1 leg)
+   - Win Rate: ~40-50%
+   - Use Case: Strong bullish bias
+   - Max Profit: Unlimited
+   - Max Loss: Premium paid
+
+BEARISH STRATEGIES (3):
+-----------------------
+8. Bear Call Spread
+   - Legs: Sell lower strike call + Buy higher strike call (2 legs)
+   - Win Rate: ~70-85%
+   - Use Case: Moderately bearish, defined risk
+   - Max Profit: Net credit received
+   - Max Loss: Strike width - credit
+
+9. Bear Put Spread
+   - Legs: Buy higher strike put + Sell lower strike put (2 legs)
+   - Win Rate: ~50-60%
+   - Use Case: Bearish, limited capital
+   - Max Profit: Strike width - debit paid
+   - Max Loss: Net debit paid
+
+10. Long Put
+    - Legs: Buy single put option (1 leg)
+    - Win Rate: ~40-50%
+    - Use Case: Strong bearish bias or hedging
+    - Max Profit: Strike - premium (stock to 0)
+    - Max Loss: Premium paid
+
+VOLATILITY STRATEGIES (3):
+--------------------------
+11. Long Strangle
+    - Legs: Buy OTM put + Buy OTM call (2 legs)
+    - Win Rate: ~30-40%
+    - Use Case: Low IV, expect big move either direction
+    - Max Profit: Unlimited
+    - Max Loss: Total debit paid
+
+12. Long Straddle
+    - Legs: Buy ATM put + Buy ATM call (2 legs)
+    - Win Rate: ~35-45%
+    - Use Case: Expect big move, unsure of direction
+    - Max Profit: Unlimited
+    - Max Loss: Total debit paid
+
+13. Butterfly Spread
+    - Legs: Buy 1 low strike + Sell 2 middle + Buy 1 high (4 legs)
+    - Win Rate: ~40-50%
+    - Use Case: Expect price to stay near middle strike
+    - Max Profit: Middle - low strike - net debit
+    - Max Loss: Net debit paid
+
+MULTI-EXPIRATION STRATEGIES (2):
+--------------------------------
+14. Calendar Spread (Time Spread)
+    - Legs: Sell near-term + Buy far-term at same strike (2 legs)
+    - Win Rate: ~50-60%
+    - Use Case: Time decay difference, stable underlying
+    - Max Profit: Limited (depends on time decay)
+    - Max Loss: Net debit paid
+
+15. Diagonal Spread
+    - Legs: Different strikes + different expirations (2 legs)
+    - Win Rate: ~50-60%
+    - Use Case: Directional bias with time decay
+    - Max Profit: Limited (depends on configuration)
+    - Max Loss: Net debit paid
+
+ADVANCED STRATEGIES (3):
+------------------------
+16. Ratio Spread
+    - Legs: Buy 1 option, Sell 2+ further OTM (asymmetric)
+    - Win Rate: ~50-65%
+    - Use Case: Collect premium with directional bias
+    - Max Profit: Limited
+    - Max Loss: Potentially unlimited on short leg side
+
+17. Jade Lizard
+    - Legs: Short put + Bear call spread (3 legs)
+    - Win Rate: ~70-80%
+    - Use Case: Neutral-bullish, no upside risk
+    - Max Profit: Total credit received
+    - Max Loss: Put strike - credit (defined on put side)
+
+STOCK-BASED STRATEGIES (3):
+---------------------------
+18. Covered Call
+    - Legs: Long 100 shares + Sell OTM call (stock + 1 option)
+    - Win Rate: ~60-70%
+    - Use Case: Generate income on stock holdings
+    - Max Profit: Strike - stock price + premium
+    - Max Loss: Stock price - premium (stock to 0)
+
+19. Protective Put
+    - Legs: Long 100 shares + Buy OTM put (stock + 1 option)
+    - Win Rate: N/A (insurance strategy)
+    - Use Case: Protect stock position from downside
+    - Max Profit: Unlimited (stock upside)
+    - Max Loss: Stock price - strike + premium
+
+20. Collar
+    - Legs: Long 100 shares + Buy put + Sell call (stock + 2 options)
+    - Win Rate: ~50-60%
+    - Use Case: Protect position with capped upside
+    - Max Profit: Call strike - stock price + net credit/debit
+    - Max Loss: Stock price - put strike + net credit/debit
+
+CUSTOM STRATEGY BUILDER (1):
+----------------------------
+21. Custom Strategy
+    - Legs: User-defined (1-10 legs)
+    - Configuration per leg:
+      * Type: Call / Put / Stock
+      * Direction: Long / Short
+      * Delta: 0.05 - 0.95
+      * Quantity: 1-100 contracts
+      * Expiration: Near / Far (for multi-expiry)
+    - Win Rate: Depends on configuration
+    - Use Case: Build any strategy not in presets
+
+================================================================================
+STRIKE SELECTION METHODS
+================================================================================
+
+The system supports 4 methods for selecting option strikes:
+
+1. DELTA-BASED (Recommended) ⭐
+   - Automatically adjusts for volatility
+   - Example: 0.16 delta = ~84% OTM probability
+   - When VIX high: Strikes placed farther out
+   - When VIX low: Strikes placed closer
+   - Most professional approach
+
+2. FIXED POINTS
+   - Static distance from current price
+   - Example: 50 points below for puts
+   - Simple but doesn't account for volatility
+   - Good for index options (SPX, SPY)
+
+3. PERCENTAGE-BASED
+   - Percentage of current price
+   - Example: 5% OTM
+   - Scales with price level
+   - Good for stocks of varying prices
+
+4. ATR-BASED
+   - Uses Average True Range (volatility measure)
+   - Example: 2x ATR for puts
+   - Adapts to recent price movement
+   - Good for volatile underlying
+
+DELTA GUIDE FOR IRON CONDOR:
+- Short Put Delta: 0.16 (84% win rate) - Standard
+- Long Put Delta: 0.08 (92% win rate) - Protection
+- Short Call Delta: -0.16 (84% win rate) - Standard
+- Long Call Delta: -0.08 (92% win rate) - Protection
+
+================================================================================
+TECHNICAL INDICATORS (16 IMPLEMENTED) ⭐ NEW
+================================================================================
+
+MOMENTUM INDICATORS (5):
+------------------------
+1. RSI (Relative Strength Index)
+   - Period: 14 (default)
+   - Conditions: oversold (<30), overbought (>70), neutral (30-70)
+   - Use: Identify reversal points
+
+2. MACD (Moving Average Convergence Divergence)
+   - Fast: 12, Slow: 26, Signal: 9
+   - Conditions: bullish_cross, bearish_cross, positive, negative
+   - Use: Trend direction and momentum
+
+3. Stochastic Oscillator
+   - Period: 14, K Smooth: 3
+   - Conditions: oversold (<20), overbought (>80), neutral
+   - Use: Overbought/oversold with momentum
+
+4. CCI (Commodity Channel Index)
+   - Period: 20
+   - Conditions: oversold (<-100), overbought (>100), neutral
+   - Use: Cycle identification
+
+5. Williams %R
+   - Period: 14
+   - Conditions: oversold (<-80), overbought (>-20)
+   - Use: Momentum oscillator
+
+TREND INDICATORS (4):
+---------------------
+6. SMA (Simple Moving Average)
+   - Period: 50 (default)
+   - Conditions: above, below, cross_above, cross_below
+   - Use: Trend direction, support/resistance
+
+7. EMA (Exponential Moving Average)
+   - Period: 50 (default)
+   - Conditions: above, below, cross_above, cross_below
+   - Use: Faster trend signals than SMA
+
+8. ADX (Average Directional Index)
+   - Period: 14
+   - Conditions: strong (>25), weak (<20)
+   - Use: Trend strength (NOT direction)
+   - Critical for Iron Condor: Want weak ADX (ranging market)
+
+9. SuperTrend
+   - Period: 10, Multiplier: 3
+   - Conditions: bullish, bearish
+   - Use: ATR-based trend following
+
+VOLATILITY INDICATORS (3):
+--------------------------
+10. ATR (Average True Range)
+    - Period: 14
+    - Conditions: high, low (vs threshold)
+    - Use: Volatility measurement
+
+11. Bollinger Bands
+    - Period: 20, Std Dev: 2
+    - Conditions: below_lower, above_upper, inside_bands, near_middle
+    - Use: Mean reversion, volatility expansion
+
+12. Keltner Channels
+    - Period: 20, ATR Mult: 2
+    - Conditions: below_lower, above_upper, inside_bands
+    - Use: Similar to Bollinger but uses ATR
+
+VOLUME INDICATORS (3):
+----------------------
+13. VWAP (Volume Weighted Average Price)
+    - Conditions: above, below
+    - Use: Institutional support/resistance
+
+14. OBV (On-Balance Volume)
+    - Period: 20
+    - Conditions: rising, falling
+    - Use: Volume momentum
+
+15. MFI (Money Flow Index)
+    - Period: 14
+    - Conditions: oversold (<20), overbought (>80), neutral
+    - Use: Volume-weighted RSI
+
+INDICATOR PRESETS:
+------------------
+- Conservative: RSI + SMA + ADX (high win rate)
+- Momentum Trader: RSI + MACD + Stochastic + ADX
+- Trend Follower: SMA + EMA + ADX + SuperTrend
+- Volatility Trader: ATR + Bollinger Bands + Keltner
+- Volume Focus: VWAP + OBV + MFI
+- Complete Strategy: 6 best indicators combined
+
+================================================================================
+ADVANCED FILTERS (PROFESSIONAL-GRADE)
+================================================================================
+
+VOLATILITY FILTERS:
+-------------------
+1. VIX Filter ⭐
+   - Range: Min/Max VIX levels
+   - Example: 15-50 for premium selling
+   - <15 = Calm, 15-25 = Normal, >25 = Fear
+   - Use Cases:
+     * Sell premium: 15-50 (elevated volatility)
+     * Buy options: 10-20 (before spike)
+     * High fear: 25-80 (crisis opportunities)
+
+2. IV Rank Filter
+   - Range: 0-100% percentile
+   - Example: 50-100 for Iron Condor
+   - Compares current IV to 1-year range
+   - Higher IV Rank = Better premium selling
+
+3. Volatility Regime Filter
+   - Types: low, medium, high (using ATR)
+   - Automatically detects market regime
+   - Match strategy to regime
+
+PRICE ACTION FILTERS:
+---------------------
+4. Market Profile (TPO)
+   - Signals: POC, VAL, VAH
+   - Lookback: 20 days (default)
+   - Use: Enter at value areas
+   - POC = Point of Control (most traded price)
+   - VAL = Value Area Low
+   - VAH = Value Area High
+
+LIQUIDITY FILTERS:
+------------------
+5. Liquidity Filter ⭐ (Highly Recommended)
+   - Max Bid-Ask Spread: 5% (default)
+   - Min Open Interest: 100 contracts
+   - Ensures realistic fills
+   - Prevents backtests showing unrealistic profits
+
+EXPIRATION FILTERS:
+-------------------
+6. Expiration Cycle Filter
+   - Types: any, monthly, weekly, eom, quarterly
+   - Monthly: 3rd Friday
+   - Weekly: Every Friday
+   - EOM: Last trading day of month
+   - Quarterly: Mar/Jun/Sep/Dec
+
+================================================================================
+RISK MANAGEMENT FEATURES
+================================================================================
+
+STOP LOSS MODES:
+----------------
+1. Credit-Based (Default)
+   - Stop at % of credit received
+   - Example: 200% of credit = 2x max loss
+   - Most common for credit spreads
+
+2. Max Loss-Based
+   - Stop at % of max possible loss
+   - Example: 50% of max loss
+   - Conservative approach
+
+3. Equal Dollar
+   - Stop loss = profit target (in dollars)
+   - 1:1 risk/reward ratio
+   - Symmetric risk management
+
+4. Price Distance
+   - Stop when underlying moves X%
+   - Example: Stop if SPX moves 5%
+   - Based on underlying price action
+
+PROFIT TARGETS:
+---------------
+- Percentage of max profit
+- Example: Close at 50% of max profit
+- Standard: 50-75% for credit spreads
+- Locks in profits early, avoids gamma risk
+
+POSITION MANAGEMENT:
+--------------------
+- Max concurrent positions
+- Min days between trades
+- Same-day trading limits
+- Position sizing (planned)
+
+================================================================================
+ANALYSIS FEATURES
+================================================================================
+
+MAE/MFE ANALYSIS:
+-----------------
+- MAE (Maximum Adverse Excursion): Worst P&L during trade
+- MFE (Maximum Favorable Excursion): Best P&L during trade
+- Helps optimize stop loss and profit targets
+- Displayed in both $ and % of credit
+
+PERFORMANCE METRICS (30+):
+--------------------------
+- Win Rate
+- Avg Win / Avg Loss
+- Profit Factor
+- Sharpe Ratio
+- Max Drawdown
+- Consecutive Wins/Losses
+- Trade Distribution
+- Entry/Exit Analysis
+- MAE/MFE Statistics
+- Greeks Exposure (planned)
+
+VISUALIZATION:
+--------------
+- MAE/MFE Scatter Plots
+- Win/Loss Distribution
+- Equity Curve
+- Drawdown Chart
+- Trade Timeline
+
+================================================================================
+CODE GENERATION ARCHITECTURE
+================================================================================
+
+The system generates complete QuantConnect algorithms by:
+
+1. COLLECTING CONFIGURATION
+   - Strategy type (Iron Condor, etc.)
+   - Strike selection method (delta, fixed, etc.)
+   - Entry filters (indicators, VIX, IV Rank)
+   - Exit rules (profit target, stop loss)
+   - Trading rules (max positions, min days between)
+
+2. BUILDING MODULAR CODE
+   - base_strategy.py provides common components:
+     * Config loader (embedded)
+     * Position tracking
+     * Exit logic
+     * P&L calculation
+   - Strategy files (iron_condor.py, etc.) provide:
+     * Option selection logic
+     * Trade entry conditions
+     * Leg management
+
+3. EMBEDDING FILTERS & INDICATORS
+   - advanced_filters.py classes embedded into generated code
+   - indicators.py classes embedded if any indicators enabled
+   - Only enabled components are included (efficient)
+
+4. GENERATING FINAL ALGORITHM
+   - Single main.py file for QuantConnect
+   - All dependencies embedded (no external files)
+   - Configuration embedded as Python dict
+   - Ready to copy-paste and run
+
+GENERATED CODE STRUCTURE:
+--------------------------
+```python
+from AlgorithmImports import *
+
+# Config (embedded)
+class Config:
+    def __init__(self, config_dict):
+        # ... embedded configuration
+
+# Indicators (if enabled)
+class IndicatorManager:
+    # ... 16 indicator classes
+
+# Advanced Filters (if enabled)
+class VIXFilter:
+    # ...
+class IVRankFilter:
+    # ...
+
+# Main Algorithm
+class OptionsBacktestAlgorithm(QCAlgorithm):
+    def Initialize(self):
+        # Setup
+        # Initialize indicators
+        # Initialize filters
+    
+    def OnData(self, data):
+        # Check if should trade
+        # Apply indicator filters
+        # Apply advanced filters
+        # Select options
+        # Enter position
+        # Manage positions
+        # Exit positions
+```
+
+================================================================================
+USER WORKFLOW
+================================================================================
+
+TYPICAL BACKTEST WORKFLOW:
+--------------------------
+1. Launch app: `py main.py`
+
+2. Configure Backtest Tab:
+   - Select strategy (e.g., Iron Condor)
+   - Set ticker (SPY, SPX, etc.)
+   - Set date range
+   - Choose strike selection method (delta recommended)
+   - Set deltas for each leg
+   - Configure profit target / stop loss
+
+3. Advanced Filters Tab:
+   - Enable VIX filter (15-50 for selling premium)
+   - Enable IV Rank (50-100 for high premium)
+   - Enable Liquidity Filter (always recommended)
+   - Select technical indicators:
+     * For Iron Condor: RSI (neutral), ADX (weak), SMA
+     * For Bull Put: RSI (oversold), MACD (bullish), SMA (above)
+   - Configure each indicator
+
+4. Generate Code:
+   - Click "Generate QuantConnect Code"
+   - Code popup appears
+   - Click "Copy Algorithm Code"
+
+5. QuantConnect:
+   - Open quantconnect.com/terminal
+   - Paste code into main.py
+   - Click "Backtest"
+   - Wait 2-5 minutes
+   - Download results CSV
+
+6. Analyze Results:
+   - Return to app
+   - Analysis Tab: Upload results CSV
+   - View MAE/MFE analysis
+   - Optimize stop loss / profit target
+   - Compare multiple strategies
+
+================================================================================
+FUTURE ENHANCEMENTS (PLANNED)
+================================================================================
+
+ADVANCED GREEKS INDICATORS:
+---------------------------
+These are second-order and third-order Greeks that measure how the first-order
+Greeks (Delta, Gamma, Vega, Theta) change with various factors:
+
+1. Gamma
+   - Rate of change of Delta
+   - Measures acceleration of Delta
+   - Entry Signal: Enter when Gamma is low (far from ATM)
+   - Risk Signal: Exit when Gamma gets too high (near ATM)
+   - Use Case: Avoid high gamma risk for Iron Condors
+
+2. Vanna (dDelta/dIV)
+   - How Delta changes with volatility
+   - Positive Vanna: Delta increases as IV increases
+   - Entry Signal: Enter when Vanna risk is low
+   - Use Case: Manage volatility exposure
+
+3. Charm (dDelta/dTime)
+   - How Delta changes over time
+   - Also called "Delta Decay"
+   - Entry Signal: Understand how position Delta will evolve
+   - Use Case: Forecast directional risk over time
+
+4. Vomma (dVega/dIV)
+   - How Vega changes with volatility
+   - Also called "Volga"
+   - Entry Signal: Second-order volatility risk
+   - Use Case: Manage vega exposure in volatile markets
+
+5. Veta (dVega/dTime)
+   - How Vega changes over time
+   - Entry Signal: Understand how volatility exposure decays
+   - Use Case: Time-based volatility management
+
+6. Speed (dGamma/dSpot)
+   - How Gamma changes with underlying price
+   - Third-order Greek
+   - Risk Signal: Extreme gamma risk zones
+   - Use Case: Advanced risk management
+
+7. Zomma (dGamma/dIV)
+   - How Gamma changes with volatility
+   - Entry Signal: Volatility impact on gamma
+   - Use Case: Complex volatility scenarios
+
+8. Color (dGamma/dTime)
+   - How Gamma changes over time
+   - Risk Signal: Gamma acceleration near expiration
+   - Use Case: Time decay of gamma risk
+
+IMPLEMENTATION PLAN FOR GREEKS:
+--------------------------------
+- Add GreeksFilter class to advanced_filters.py
+- Calculate Greeks using Black-Scholes model
+- Implement filters:
+  * Max Gamma threshold (avoid high-gamma zones)
+  * Vanna regime detection (volatility/delta correlation)
+  * Charm monitoring (delta decay rate)
+  * Vomma limits (second-order vega risk)
+- Add to Advanced Tab GUI:
+  * Greeks section under Risk Management
+  * Individual enable/disable for each Greek
+  * Threshold sliders for each metric
+- Entry Logic:
+  * Only enter when all Greek thresholds are satisfied
+  * Example: Gamma < 0.05, Vanna < 0.02, Vomma < 0.01
+
+ADDITIONAL PLANNED FEATURES:
+----------------------------
+
+1. PORTFOLIO GREEKS LIMITS
+   - Total portfolio Delta limit
+   - Total portfolio Gamma limit
+   - Total portfolio Vega limit
+   - Total portfolio Theta target
+   - Prevent over-exposure in any Greek dimension
+
+2. DYNAMIC POSITION SIZING
+   - Kelly Criterion
+   - Fixed Fractional (% of capital)
+   - Volatility-based sizing
+   - Greeks-based sizing (size down when Greeks are high)
+
+3. CORRELATION FILTERS
+   - Avoid highly correlated positions
+   - Sector exposure limits
+   - Cross-asset correlation (SPY/QQQ, etc.)
+
+4. EARNINGS FILTERS
+   - Avoid trades during earnings announcements
+   - API integration to earnings calendars
+   - Configurable buffer (e.g., 7 days before/after earnings)
+
+5. MULTI-TIMEFRAME CONFIRMATION
+   - Require alignment across multiple timeframes
+   - Example: Daily trend + 4H momentum + 1H entry
+   - Reduces false signals
+
+6. MACHINE LEARNING INTEGRATION
+   - Train models on historical trades
+   - Predict win probability based on market conditions
+   - Optimize entry/exit rules automatically
+   - Feature importance analysis
+
+7. LIVE TRADING INTEGRATION
+   - Connect to broker APIs (Tiger Brokers, IBKR)
+   - Automated trade execution
+   - Real-time position monitoring
+   - Real-time P&L tracking
+
+8. ADDITIONAL STRATEGIES ✅ COMPLETED
+   - Calendar Spreads ✅
+   - Diagonal Spreads ✅
+   - Ratio Spreads ✅
+   - Jade Lizard ✅
+   - Covered Call ✅
+   - Protective Put ✅
+   - Collar ✅
+   - Long Call/Put ✅
+   - Long Straddle ✅
+   - Butterfly Spread ✅
+   - Custom Strategy Builder ✅
+
+9. ENHANCED ANALYSIS
+   - Monte Carlo simulation
+   - Stress testing (what if volatility spikes)
+   - Scenario analysis (up/down/flat markets)
+   - Walk-forward optimization
+   - Out-of-sample testing
+
+10. CLOUD INTEGRATION
+    - Save configurations to cloud
+    - Share strategies with team
+    - Centralized results database
+    - Collaborative backtesting
+
+================================================================================
+KEY DESIGN DECISIONS
+================================================================================
+
+MODULAR ARCHITECTURE:
+---------------------
+- Each strategy is a separate file
+- base_strategy.py provides common functionality
+- Filters and indicators are standalone classes
+- Easy to add new strategies/indicators/filters
+
+EMBEDDED CODE GENERATION:
+-------------------------
+- Generated code has NO external dependencies
+- Everything embedded in single file
+- Easy to copy-paste to QuantConnect
+- No file management on QuantConnect side
+
+DELTA-BASED STRIKES:
+--------------------
+- Automatically adjusts for volatility
+- More professional than fixed points
+- Standard in institutional trading
+- Win probability built-in
+
+LIQUIDITY FILTER DEFAULT ON:
+-----------------------------
+- Prevents unrealistic backtests
+- Forces realistic bid-ask spreads
+- Requires minimum open interest
+- Critical for accurate results
+
+PYQT5 GUI CHOICE:
+-----------------
+- Professional-grade Qt-based GUI
+- Cross-platform (Windows, Mac, Linux)
+- Apache ECharts for interactive charts
+- Dark theme with modern styling
+- Embedded web view for JavaScript charts
+
+QUANTCONNECT TARGET:
+--------------------
+- Cloud-based (no local data needed)
+- Free tier available
+- Historical options data included
+- Professional-grade backtesting engine
+
+================================================================================
+COMMON USER PATTERNS
+================================================================================
+
+IRON CONDOR USERS:
+------------------
+Typical Setup:
+- Strategy: Iron Condor
+- Ticker: SPY or SPX
+- Expiry: 30-45 days
+- Delta: 0.16 short, 0.08 long
+- Profit Target: 50%
+- Stop Loss: 200% of credit
+- Filters:
+  * VIX: 15-30 (normal volatility)
+  * IV Rank: 50-100 (elevated premium)
+  * ADX: <20 (weak trend = ranging)
+  * RSI: 30-70 (neutral)
+  * Liquidity: ON
+
+Result: 70-85% win rate, controlled losses
+
+DIRECTIONAL SPREAD USERS:
+-------------------------
+Typical Setup (Bull Put):
+- Strategy: Bull Put Spread
+- Ticker: SPY
+- Expiry: 30 days
+- Delta: 0.16 short, 0.08 long
+- Profit Target: 50%
+- Stop Loss: 100% of credit
+- Filters:
+  * VIX: 15-40
+  * RSI: <40 (oversold)
+  * MACD: Bullish cross
+  * SMA 50: Price above
+  * Liquidity: ON
+
+Result: 70-80% win rate, aligned with trend
+
+VOLATILITY TRADERS:
+-------------------
+Typical Setup (Long Strangle):
+- Strategy: Long Strangle
+- Ticker: SPY
+- Expiry: 30-60 days
+- Delta: 0.30-0.40 for both legs
+- Profit Target: 100%
+- Stop Loss: 50% of debit
+- Filters:
+  * VIX: 10-20 (low volatility)
+  * Bollinger Bands: Inside bands
+  * ATR: Low
+  * Stochastic: Neutral
+
+Result: 30-40% win rate, large winners
+
+================================================================================
+TROUBLESHOOTING GUIDE
+================================================================================
+
+COMMON ISSUES:
+--------------
+
+1. "No trades executed in backtest"
+   Causes:
+   - Too many filters enabled (overfitting)
+   - Indicators too strict (RSI < 10 rarely happens)
+   - VIX range too narrow (15-16 vs 15-30)
+   - Date range too short
+   Solutions:
+   - Disable some indicators
+   - Relax thresholds (RSI < 40 instead of < 30)
+   - Widen VIX range
+   - Test longer period (1+ years)
+
+2. "Backtest shows unrealistic profits"
+   Causes:
+   - Liquidity filter disabled
+   - Trading illiquid strikes
+   Solutions:
+   - Enable liquidity filter (ALWAYS)
+   - Increase min open interest to 100+
+   - Reduce max spread to 5%
+
+3. "Stop loss getting hit too often"
+   Causes:
+   - Stop loss too tight
+   - Using wrong stop loss mode
+   Solutions:
+   - Increase stop loss % (200% → 300%)
+   - Try different mode (credit → max loss)
+   - Review MAE/MFE analysis to optimize
+
+4. "Win rate too low for Iron Condor"
+   Causes:
+   - Wrong market regime (trending vs ranging)
+   - Deltas too aggressive (0.30 instead of 0.16)
+   Solutions:
+   - Enable ADX filter (want <20 for IC)
+   - Use safer deltas (0.10 instead of 0.16)
+   - Add VIX filter (avoid panic selling)
+
+5. "Indicator not filtering correctly"
+   Causes:
+   - Wrong condition selected
+   - Parameter mismatch
+   Solutions:
+   - Review indicator configuration
+   - Check condition dropdown
+   - Verify period settings
+
+================================================================================
+DEVELOPMENT HISTORY
+================================================================================
+
+PHASE 1: Core System (Initial Build)
+-------------------------------------
+- Basic Tkinter GUI with tabs
+- Config Tab for strategy setup
+- Iron Condor strategy implementation
+- Delta-based strike selection
+- QuantConnect code generation
+- Basic profit target / stop loss
+
+PHASE 2: Strategy Expansion
+----------------------------
+- Added 8 more strategies (Bull/Bear spreads, Strangles, etc.)
+- Implemented 4 strike selection methods
+- Added stop loss modes (credit, max loss, equal dollar, price distance)
+- Trading rules (max positions, min days between)
+- Expiry range support (±5 days flexibility)
+
+PHASE 3: Advanced Filters
+--------------------------
+- VIX filter implementation
+- IV Rank calculation and filtering
+- Market Profile (TPO) indicator
+- Volatility Regime detection
+- Liquidity filter (bid-ask + OI)
+- Expiration cycle filtering
+
+PHASE 4: Technical Indicators
+----------------------------------------
+- Implemented 16 technical indicators:
+  * 5 Momentum (RSI, MACD, Stochastic, CCI, Williams %R)
+  * 4 Trend (SMA, EMA, ADX, SuperTrend)
+  * 3 Volatility (ATR, Bollinger, Keltner)
+  * 3 Volume (VWAP, OBV, MFI)
+- Created indicators.py with full indicator classes
+- Enhanced Advanced Tab GUI with indicator section
+- Individual configuration dialogs for each indicator
+- 6 built-in presets (Conservative, Momentum, etc.)
+- Updated base_strategy.py to embed indicators
+- Full integration with QuantConnect code generation
+
+PHASE 5: Analysis & Comparison
+-------------------------------
+- MAE/MFE analysis implementation
+- Trade analysis charts
+- Strategy comparison tool
+- Performance metrics (30+)
+- Results CSV upload and parsing
+- Settings management (themes, defaults)
+
+PHASE 6: Advanced Greeks & Filters ⭐ COMPLETED
+------------------------------------------------
+- Implemented Advanced Greeks Filter (Contract-Level):
+  * Second-Order Greeks: Gamma, Vanna, Charm, Vomma, Veta
+  * Third-Order Greeks: Speed, Zomma, Color
+  * AdvancedGreeksFilter class in advanced_filters.py
+  * GUI section with individual toggles and thresholds
+  * Integrated into StrikeSelector for all 9 strategies
+- Fixed VIX Filter (was missing from code generation):
+  * Added to generate_advanced_config_string()
+  * Added to generate_filter_initialization()
+  * Added to generate_filter_checks()
+- Verified existing filters work correctly:
+  * Correlation Filter (already implemented)
+  * Earnings Filter (already implemented)
+  * Multi-Timeframe Confirmation Filter (already implemented)
+- Centralized code generation in BaseStrategy:
+  * generate_advanced_config_string() - all config in one place
+  * generate_filter_initialization() - all filter init code
+  * generate_filter_checks() - all filter check code
+- All 9 strategies now use centralized methods (no duplication)
+
+================================================================================
+CONTRIBUTING GUIDELINES (FOR AI ASSISTANTS)
+================================================================================
+
+When modifying this project:
+
+1. MAINTAIN MODULARITY
+   - Keep strategies in separate files
+   - Don't hardcode in base_strategy.py
+   - Use inheritance where appropriate
+
+2. FOLLOW NAMING CONVENTIONS
+   - Strategy files: lowercase_with_underscores.py
+   - Classes: CamelCase
+   - Functions: snake_case
+   - Constants: UPPER_CASE
+
+3. UPDATE DOCUMENTATION
+   - Add new strategies to strategies.json
+   - Add new indicators to indicators.json
+   - Update this PROJECT_CONTEXT.txt
+   - Include docstrings in code
+
+4. MAINTAIN BACKWARD COMPATIBILITY
+   - Don't break existing configurations
+   - Add new features as optional
+   - Provide migration path for old configs
+
+5. TEST THOROUGHLY
+   - Test GUI changes on all tabs
+   - Generate code and verify it compiles
+   - Run on QuantConnect to ensure it executes
+   - Test with different strategies
+
+6. CODE GENERATION RULES
+   - All generated code must be self-contained
+   - No external file dependencies
+   - Embed all classes and functions
+   - Must compile in QuantConnect
+
+7. USER EXPERIENCE
+   - Keep GUI simple and intuitive
+   - Provide tooltips and help text
+   - Validate user inputs
+   - Give clear error messages
+
+================================================================================
+CURRENT STATUS
+================================================================================
+
+COMPLETED:
+✅ 22 options strategies fully implemented (21 preset + 1 custom builder)
+✅ PyQt5 + Apache ECharts modern UI
+✅ 4 strike selection methods
+✅ 16 technical indicators with full GUI
+✅ Advanced filters (VIX, IV Rank, Market Profile, etc.)
+✅ Complete QuantConnect code generation
+✅ MAE/MFE analysis with ECharts
+✅ Strategy comparison with interactive charts
+✅ Settings management
+✅ Multi-computer setup support
+✅ Fresh installation guides
+✅ Advanced Greeks Filters (Gamma, Vanna, Charm, Vomma, Veta, Speed, Zomma, Color)
+✅ VIX Filter integration (fixed - was missing from code generation)
+✅ Correlation Filter integration
+✅ Earnings Filter integration
+✅ Multi-Timeframe Confirmation Filter integration
+✅ Centralized code generation (BaseStrategy methods)
+✅ All strategies using centralized filter methods
+✅ Custom Strategy Builder (user-defined legs)
+✅ Stock-based strategies (Covered Call, Protective Put, Collar)
+✅ Multi-expiration strategies (Calendar, Diagonal spreads)
+✅ Advanced strategies (Ratio Spread, Jade Lizard)
+✅ ECharts widget with dark theme
+✅ Reusable chart helpers (line, bar, scatter, candlestick, pie, heatmap)
+
+IN PROGRESS:
+🔄 Testing all filters with QuantConnect
+🔄 Fine-tuning UI/UX
+
+PLANNED:
+📋 Portfolio Greeks limits (aggregate position Greeks)
+📋 Dynamic position sizing
+📋 Machine learning integration
+📋 Live trading integration
+📋 Additional condor variations (Put Condor, Call Condor)
+
+================================================================================
+UI/CHART IMPLEMENTATION (COMPLETED)
+================================================================================
+
+The UI has been upgraded to PyQt5 + Apache ECharts for professional-grade
+interactive charts and modern dark-themed UI.
+
+CHART TECHNOLOGY:
+-----------------
+- Apache ECharts via QWebEngineView (NOT matplotlib)
+- Embed echarts.min.js (~1MB) into gui/assets/ (from jsdelivr)
+- Reusable EChartsWidget(QWidget) wrapper class:
+  * Reads echarts.min.js from local file, embeds inline in HTML
+  * set_option(dict) method: serializes Python dict to JSON
+  * Ready-flag queue: stores pending option if called before page loads
+  * Escape backticks/backslashes in JSON for JS template literal safety
+  * Auto-resize: JS window.resize + Python resizeEvent trigger chart.resize()
+  * Dark theme registered via echarts.registerTheme()
+
+CHART INTERACTIVITY (Built into ECharts):
+-----------------------------------------
+- tooltip: {trigger: 'axis', axisPointer: {type: 'cross'}} — crosshair on hover
+- legend: {type: 'scroll'} — click legend items to toggle series
+- dataZoom: [{type: 'inside'}] — scroll-to-zoom, drag-to-pan
+- axisPointer: {link: [{xAxisIndex: 'all'}]} — synchronized crosshair
+- Multiple y-axes: yAxisIndex per series with show: False for overlays
+- Dual-grid layout: grid: [{top, height}, {top, height}] with gridIndex
+
+DATA FLOW:
+----------
+- Parse CSV data in Python (pandas) into lists/dicts
+- Build ECharts option dict in Python with all series, axes, grid config
+- Call chart_widget.set_option(option_dict) — one call renders everything
+- On refresh: call set_option() with notMerge: true to fully replace
+
+COLOR PALETTE (theme.py):
+-------------------------
+C = {
+    "bg": "#0d1117", "card_bg": "#161b22", "card_border": "#30363d",
+    "text": "#f0f6fc", "dim": "#8b949e", "accent": "#58a6ff",
+    "up": "#3fb950", "down": "#f85149", "yellow": "#e3b341",
+    "input_bg": "#0d1117", "input_border": "#30363d",
+    "btn_bg": "#21262d", "btn_hover": "#30363d",
+}
+
+LAYOUT RULES:
+-------------
+- Font: Consolas monospace everywhere
+- Control/selector rows: horizontal QFrame with setObjectName("panel")
+  * card_bg background, 1px card_border, 8px rounded corners
+  * QHBoxLayout with 14px 8px margins
+  * Pattern: bold accent-colored QLabel → fixed-width input → addSpacing(12)
+  * addStretch() at end for left alignment
+- Center-align: addStretch() at BOTH start and end
+- Navigation: checkable QPushButton row, flat transparent bg
+  * 2px accent bottom-border on active, dim text on inactive
+- Content area: QStackedWidget filling remaining space (stretch=1)
+- Inputs: dark bg, subtle border, accent on focus, 4px radius
+- Buttons: dark bg, subtle border, accent border on hover
+  * Green for connect, dark-blue + accent border for actions
+- Tables: dark bg, accent-bold headers, green/red for +/- values
+- Status bar: card_bg background, dim text, top border
+- Spacing: 16px main margins, 12px between sections, 8-10px grid spacing
+
+DEPENDENCIES (for UI upgrade):
+------------------------------
+- PyQt5==5.15.9
+- PyQtWebEngine==5.15.7
+- echarts.min.js in gui/assets/
+
+================================================================================
+CONTACT & SUPPORT
+================================================================================
+
+For questions, issues, or feature requests:
+1. Check FRESH_INSTALL_GUIDE.md for setup help
+2. Review INDICATORS_README.md for indicator usage
+3. Consult this PROJECT_CONTEXT.txt for architecture
+
+Developer: Justin
+Background: Forex trader (JustinDPC EA), expanding to options
+Experience: ByteDance, BlackRock, J.P. Morgan Chase
+Skills: Python, MQL4, API integration, systematic trading
+
+================================================================================
+END OF PROJECT CONTEXT
+================================================================================
+
+Last Updated: 2026-02-12
+Version: 4.0 (22 Strategies + PyQt5/ECharts UI Complete)
+Lines: 1000+
+Purpose: Complete context for Claude Code and AI assistants
+
+This document should give any AI coding assistant complete understanding of:
+- What this project does
+- How it's architected
+- What's implemented
+- What's planned
+- How to contribute
+- Current status
+
+Use this as the master reference when working on the codebase.

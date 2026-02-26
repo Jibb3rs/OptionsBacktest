@@ -1,0 +1,133 @@
+name: Build Installers
+
+on:
+  push:
+    tags:
+      - 'v*'        # triggers on v1.0.0, v1.2.3, etc.
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  # ─────────────────────────────────────────────
+  # macOS — produces OptionsBacktest-macOS.dmg
+  # ─────────────────────────────────────────────
+  build-macos:
+    runs-on: macos-13   # Intel runner — broadest Mac compatibility
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller cryptography
+
+      - name: Build .app with PyInstaller
+        run: pyinstaller OptionsBacktest.spec
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Create .dmg installer
+        run: |
+          create-dmg \
+            --volname "OptionsBacktest" \
+            --window-pos 200 120 \
+            --window-size 660 400 \
+            --icon-size 128 \
+            --icon "OptionsBacktest.app" 165 190 \
+            --hide-extension "OptionsBacktest.app" \
+            --app-drop-link 495 190 \
+            --background "build/dmg_background.png" \
+            "dist/OptionsBacktest-macOS.dmg" \
+            "dist/OptionsBacktest.app" \
+          || \
+          create-dmg \
+            --volname "OptionsBacktest" \
+            --window-pos 200 120 \
+            --window-size 560 300 \
+            --icon-size 100 \
+            --icon "OptionsBacktest.app" 140 150 \
+            --hide-extension "OptionsBacktest.app" \
+            --app-drop-link 420 150 \
+            "dist/OptionsBacktest-macOS.dmg" \
+            "dist/OptionsBacktest.app"
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: OptionsBacktest-macOS
+          path: dist/OptionsBacktest-macOS.dmg
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Windows — produces OptionsBacktest-Setup.exe
+  # ─────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller cryptography
+
+      - name: Build .exe with PyInstaller
+        run: pyinstaller OptionsBacktest.spec
+
+      - name: Build installer with Inno Setup
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" "build\installer.iss"
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: OptionsBacktest-Windows
+          path: dist/OptionsBacktest-Setup.exe
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Create GitHub Release with both artifacts
+  # ─────────────────────────────────────────────
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: OptionsBacktest-macOS
+          path: artifacts/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: OptionsBacktest-Windows
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/OptionsBacktest-macOS.dmg
+            artifacts/OptionsBacktest-Setup.exe
+          generate_release_notes: true
