@@ -18,7 +18,6 @@ added_datas = [
 
     # Strategy source files — read as TEXT at runtime for code generation
     ('strategies/advanced_filters.py',  'strategies'),
-    ('strategies/indicators.py',        'strategies'),
 ]
 
 a = Analysis(
