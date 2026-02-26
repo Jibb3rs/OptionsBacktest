@@ -1,30 +1,14 @@
 # Options Backtesting System - Requirements
-# Python 3.8+ required
+# Python 3.11+ required
 
-# License key validation (Ed25519 cryptographic signing)
 cryptography>=41.0.0
-
-# GUI Framework (PyQt5 for modern UI)
-PyQt5==5.15.9
-PyQtWebEngine==5.15.6
-
-# Legacy GUI (Tkinter - comes with Python)
-# tkinter==8.6  # Usually comes with Python (commented out - tkinter cannot be installed via pip)
-
-# Data Analysis & Numerical Computing
-pandas==2.0.3
-numpy==1.24.3
-
-# Date/Time Handling
-python-dateutil==2.8.2
-
-# File I/O
-openpyxl==3.1.2  # For Excel file support (.xlsx)
-xlsxwriter==3.1.9  # For creating Excel files
-
-# Plotting & Visualization
-matplotlib==3.7.2
-seaborn==0.12.2
-
-# Additional Utilities
-Pillow==10.0.0  # For image handling in GUI
+PyQt5>=5.15.9
+PyQtWebEngine>=5.15.6
+pandas>=2.0.0
+numpy>=1.24.0
+python-dateutil>=2.8.2
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+Pillow>=10.0.0
