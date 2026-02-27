@@ -2,106 +2,126 @@
   "iron_condor": {
     "name": "Iron Condor",
     "description": "Sell OTM put+call spreads. Win when price stays in range. ~84% win rate with 0.16 delta.",
-    "legs": 4
+    "legs": 4,
+    "spread_type": "credit"
   },
   "long_call": {
     "name": "Long Call",
     "description": "Buy call option. Profit from upward movement.",
-    "legs": 1
+    "legs": 1,
+    "spread_type": "debit"
   },
   "long_put": {
     "name": "Long Put",
     "description": "Buy put option. Profit from downward movement.",
-    "legs": 1
+    "legs": 1,
+    "spread_type": "debit"
   },
   "bull_call_spread": {
     "name": "Bull Call Spread",
     "description": "Buy lower + Sell higher call. Bullish with limited risk.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "bull_put_spread": {
     "name": "Bull Put Spread",
     "description": "Sell higher put, buy lower put. Bullish credit spread with defined risk.",
     "legs": 2,
     "risk": "Defined",
-    "category": "bullish"
+    "category": "bullish",
+    "spread_type": "credit"
   },
   "bear_call_spread": {
     "name": "Bear Call Spread",
     "description": "Sell lower call, buy higher call. Bearish credit spread with defined risk.",
     "legs": 2,
     "risk": "Defined",
-    "category": "bearish"
+    "category": "bearish",
+    "spread_type": "credit"
   },
   "bear_put_spread": {
     "name": "Bear Put Spread",
     "description": "Buy higher + Sell lower put. Bearish with limited risk.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "long_straddle": {
     "name": "Long Straddle",
     "description": "Buy ATM call+put. Profit from big move either direction.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "short_straddle": {
     "name": "Short Straddle",
     "description": "Sell ATM call+put. Profit when price stays flat.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "credit"
   },
   "long_strangle": {
     "name": "Long Strangle",
     "description": "Buy OTM call+put. Cheaper than straddle.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "short_strangle": {
     "name": "Short Strangle",
     "description": "Sell OTM call+put. Collect premium if range-bound.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "credit"
   },
   "butterfly_spread": {
     "name": "Butterfly Spread",
     "description": "Buy 1 low, Sell 2 mid, Buy 1 high. Max profit at middle.",
-    "legs": 4
+    "legs": 4,
+    "spread_type": "debit"
   },
   "iron_butterfly": {
     "name": "Iron Butterfly",
     "description": "Like iron condor but centered at ATM.",
-    "legs": 4
+    "legs": 4,
+    "spread_type": "credit"
   },
   "calendar_spread": {
     "name": "Calendar Spread",
     "description": "Sell near-term + Buy far-term same strike.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "diagonal_spread": {
     "name": "Diagonal Spread",
     "description": "Calendar with different strikes.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "ratio_spread": {
     "name": "Ratio Spread",
     "description": "Buy 1, Sell 2+ at different strike.",
-    "legs": 3
+    "legs": 3,
+    "spread_type": "credit"
   },
   "jade_lizard": {
     "name": "Jade Lizard",
     "description": "Short strangle + short put. No upside risk.",
-    "legs": 3
+    "legs": 3,
+    "spread_type": "credit"
   },
   "covered_call": {
     "name": "Covered Call",
     "description": "Own stock + Sell call for income.",
-    "legs": 1
+    "legs": 1,
+    "spread_type": "credit"
   },
   "protective_put": {
     "name": "Protective Put",
     "description": "Own stock + Buy put for insurance.",
-    "legs": 1
+    "legs": 1,
+    "spread_type": "debit"
   },
   "collar": {
     "name": "Collar",
     "description": "Own stock + Buy put + Sell call.",
-    "legs": 2
+    "legs": 2,
+    "spread_type": "debit"
   },
   "custom_strategy": {
     "name": "Custom Strategy",

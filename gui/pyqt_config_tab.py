@@ -68,8 +68,16 @@ class ConfigTab(QWidget):
 
         # Strategy dropdown
         self.strategy_combo = QComboBox()
-        self.strategy_combo.setMinimumWidth(250)
-        self.strategy_combo.addItems([s['name'] for s in self.strategies.values()])
+        self.strategy_combo.setMinimumWidth(280)
+        for s in self.strategies.values():
+            spread_type = s.get('spread_type', '')
+            if spread_type == 'credit':
+                label = f"{s['name']}  (Credit)"
+            elif spread_type == 'debit':
+                label = f"{s['name']}  (Debit)"
+            else:
+                label = s['name']
+            self.strategy_combo.addItem(label)
         self.strategy_combo.currentIndexChanged.connect(self._on_strategy_changed)
         create_form_row("Strategy:", self.strategy_combo, strategy_layout, LABEL_WIDTH)
 
@@ -275,6 +283,63 @@ class ConfigTab(QWidget):
         button_layout.addStretch()
         layout.addLayout(button_layout)
 
+        # R/R Estimate Panel (shown after Generate is clicked)
+        self.rr_panel = QFrame()
+        self.rr_panel.setObjectName("panel")
+        self.rr_panel.setVisible(False)
+        rr_outer = QVBoxLayout(self.rr_panel)
+        rr_outer.setContentsMargins(16, 12, 16, 12)
+        rr_outer.setSpacing(8)
+
+        self.rr_header_label = QLabel("Estimated R/R per Trade")
+        self.rr_header_label.setObjectName("header")
+        rr_outer.addWidget(self.rr_header_label)
+
+        self.rr_type_label = QLabel()
+        self.rr_type_label.setStyleSheet(f"color: {C['dim']}; font-size: 9pt;")
+        rr_outer.addWidget(self.rr_type_label)
+
+        # Four metric columns
+        rr_metrics = QHBoxLayout()
+        rr_metrics.setSpacing(0)
+
+        def make_metric_col(title):
+            col = QVBoxLayout()
+            col.setSpacing(2)
+            title_lbl = QLabel(title)
+            title_lbl.setStyleSheet(f"color: {C['dim']}; font-size: 8pt;")
+            val_lbl = QLabel("—")
+            val_lbl.setStyleSheet("font-size: 14pt; font-weight: bold;")
+            col.addWidget(title_lbl)
+            col.addWidget(val_lbl)
+            sep = QFrame()
+            sep.setFrameShape(QFrame.VLine)
+            sep.setStyleSheet(f"color: {C['card_border']};")
+            return col, val_lbl, sep
+
+        win_col, self.rr_win_label, sep1 = make_metric_col("Max Win")
+        loss_col, self.rr_loss_label, sep2 = make_metric_col("Max Stop")
+        ratio_col, self.rr_ratio_label, sep3 = make_metric_col("R/R Ratio")
+        be_col, self.rr_breakeven_label, _ = make_metric_col("Min Win Rate")
+
+        self.rr_win_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #4caf50;")
+        self.rr_loss_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #ef5350;")
+        self.rr_ratio_label.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {C['accent']};")
+
+        for col in (win_col, loss_col, ratio_col, be_col):
+            rr_metrics.addLayout(col)
+            rr_metrics.addSpacing(32)
+        rr_metrics.addStretch()
+
+        rr_outer.addLayout(rr_metrics)
+
+        self.rr_note_label = QLabel()
+        self.rr_note_label.setStyleSheet(f"color: {C['dim']}; font-size: 8pt;")
+        self.rr_note_label.setWordWrap(True)
+        rr_outer.addWidget(self.rr_note_label)
+
+        layout.addWidget(self.rr_panel)
+
         # Add stretch at bottom
         layout.addStretch()
 
@@ -290,6 +355,13 @@ class ConfigTab(QWidget):
             key = strategy_keys[idx]
             strategy = self.strategies[key]
             self.strategy_desc.setText(strategy.get('description', ''))
+
+            # Auto-set stop loss mode based on spread type
+            spread_type = strategy.get('spread_type', '')
+            if spread_type == 'debit':
+                self.stop_loss_mode.setCurrentIndex(1)  # Max Loss-Based (Conservative)
+            elif spread_type == 'credit':
+                self.stop_loss_mode.setCurrentIndex(0)  # Credit-Based (Options Standard)
 
             # Show/hide custom strategy builder
             is_custom = strategy.get('custom', False)
@@ -556,6 +628,9 @@ class ConfigTab(QWidget):
             # Generate code
             code = strategy_class.generate_code(config)
 
+            # Show R/R estimate
+            self._update_rr_estimate(strategy_key)
+
             # Show code popup
             from .pyqt_code_popup import CodePopup
             popup = CodePopup(code, self)
@@ -565,6 +640,58 @@ class ConfigTab(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate code: {str(e)}")
+
+    def _update_rr_estimate(self, strategy_key):
+        """Calculate and display R/R estimate after code generation"""
+        strategy = self.strategies.get(strategy_key, {})
+        spread_type = strategy.get('spread_type', '')
+        pt = self.profit_target.value()   # profit target %
+        sl = self.stop_loss.value()       # stop loss %
+        mode = self.stop_loss_mode.currentText()
+
+        if 'Credit' in mode:
+            # Both PT and SL are percentages of the credit received
+            ratio = sl / pt
+            breakeven = sl / (pt + sl) * 100
+            self.rr_win_label.setText(f"+{pt}% of credit")
+            self.rr_loss_label.setText(f"\u2212{sl}% of credit")
+            self.rr_ratio_label.setText(f"1 : {ratio:.1f}")
+            self.rr_breakeven_label.setText(f"{breakeven:.0f}%")
+            self.rr_type_label.setText(
+                f"Credit Spread \u2014 close at {pt}% profit, stop when loss = {sl}% of premium collected"
+            )
+            self.rr_note_label.setText(
+                f"Example: collect $1.00 credit \u2192 target exit at +${pt/100:.2f} | stop at \u2212${sl/100:.2f} per contract"
+            )
+
+        elif 'Max Loss' in mode:
+            # PT is % of max profit; SL is % of max loss (= debit paid for debit spreads)
+            # Rough assumption: max_profit \u2248 50% of max_loss (varies by spread width & pricing)
+            approx_gain_factor = 0.5
+            approx_ratio = sl / (pt * approx_gain_factor)
+            breakeven = sl / (pt * approx_gain_factor + sl) * 100
+            self.rr_win_label.setText(f"+{pt}% of max gain")
+            self.rr_loss_label.setText(f"\u2212{sl}% of debit")
+            self.rr_ratio_label.setText(f"~1 : {approx_ratio:.1f}")
+            self.rr_breakeven_label.setText(f"~{breakeven:.0f}%")
+            self.rr_type_label.setText(
+                f"Debit Spread \u2014 target {pt}% of max profit, stop at {sl}% of debit paid"
+            )
+            self.rr_note_label.setText(
+                "Ratio is approximate \u2014 exact amounts depend on spread width & entry pricing in QuantConnect."
+            )
+
+        else:
+            ratio = sl / pt if pt > 0 else 0
+            breakeven = sl / (pt + sl) * 100 if (pt + sl) > 0 else 0
+            self.rr_win_label.setText(f"+{pt}%")
+            self.rr_loss_label.setText(f"\u2212{sl}%")
+            self.rr_ratio_label.setText(f"~1 : {ratio:.1f}")
+            self.rr_breakeven_label.setText(f"{breakeven:.0f}%")
+            self.rr_type_label.setText(f"Mode: {mode}")
+            self.rr_note_label.setText("")
+
+        self.rr_panel.setVisible(True)
 
     def get_config(self):
         """Get current configuration"""
