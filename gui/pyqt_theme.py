@@ -5,20 +5,20 @@ Dark and Light theme support with modern styling
 
 # Color Palettes
 DARK_COLORS = {
-    "bg": "#0d1117",
-    "card_bg": "#161b22",
-    "alt_bg": "#1c2130",
-    "card_border": "#30363d",
+    "bg": "#0e0e0e",
+    "card_bg": "#1a1a1a",
+    "alt_bg": "#202020",
+    "card_border": "#2d2d2d",
     "text": "#f0f6fc",
     "dim": "#8b949e",
     "accent": "#ffdc00",
     "up": "#3fb950",
     "down": "#f85149",
     "yellow": "#e3b341",
-    "input_bg": "#0d1117",
-    "input_border": "#30363d",
-    "btn_bg": "#21262d",
-    "btn_hover": "#30363d",
+    "input_bg": "#0e0e0e",
+    "input_border": "#2d2d2d",
+    "btn_bg": "#222222",
+    "btn_hover": "#2d2d2d",
 }
 
 LIGHT_COLORS = {
@@ -138,7 +138,7 @@ QPushButton#primary {{
 }}
 
 QPushButton#primary:hover {{
-    background-color: {'#e6c800' if c is DARK_COLORS or c.get('bg') == '#0d1117' else '#8a6d00'};
+    background-color: {'#e6c800' if c.get('bg') != '#ffffff' else '#8a6d00'};
 }}
 
 QPushButton#success {{
@@ -149,7 +149,7 @@ QPushButton#success {{
 
 QPushButton#danger {{
     background-color: {c['down']};
-    color: {'#f0f6fc' if c.get('bg') == '#0d1117' else '#ffffff'};
+    color: {'#f0f6fc' if c.get('bg') != '#ffffff' else '#ffffff'};
     border: none;
 }}
 
@@ -392,7 +392,7 @@ QSlider::handle:horizontal {{
 }}
 
 QSlider::handle:horizontal:hover {{
-    background: {'#79b8ff' if c.get('bg') == '#0d1117' else '#0550ae'};
+    background: {'#e6c800' if c.get('bg') != '#ffffff' else '#8a6d00'};
 }}
 
 QListWidget {{

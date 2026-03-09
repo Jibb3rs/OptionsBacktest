@@ -31,20 +31,20 @@ class SplashScreen(QDialog):
 
         # Dark background
         palette = self.palette()
-        palette.setColor(QPalette.Window, QColor("#0d1117"))
+        palette.setColor(QPalette.Window, QColor("#0e0e0e"))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
 
         self.setStyleSheet("""
             QDialog {
-                background-color: #0d1117;
+                background-color: #0e0e0e;
             }
             QLabel {
                 background-color: transparent;
                 color: #f0f6fc;
             }
             QLabel#title {
-                color: #58a6ff;
+                color: #ffdc00;
                 font-size: 20px;
                 font-weight: bold;
             }
@@ -71,17 +71,17 @@ class SplashScreen(QDialog):
                 font-size: 10px;
             }
             QLineEdit {
-                background-color: #161b22;
-                border: 1px solid #30363d;
+                background-color: #1a1a1a;
+                border: 1px solid #2d2d2d;
                 border-radius: 6px;
                 padding: 10px 14px;
                 color: #f0f6fc;
                 font-family: Consolas, monospace;
                 font-size: 11px;
-                selection-background-color: #58a6ff;
+                selection-background-color: #ffdc00;
             }
             QLineEdit:focus {
-                border-color: #58a6ff;
+                border-color: #ffdc00;
             }
             QPushButton#activate {
                 background-color: #238636;
@@ -99,18 +99,18 @@ class SplashScreen(QDialog):
                 background-color: #1a7f37;
             }
             QPushButton#activate:disabled {
-                background-color: #21262d;
+                background-color: #222222;
                 color: #8b949e;
-                border-color: #30363d;
+                border-color: #2d2d2d;
             }
             QFrame#divider {
-                background-color: #21262d;
+                background-color: #222222;
                 border: none;
                 max-height: 1px;
             }
             QFrame#card {
-                background-color: #161b22;
-                border: 1px solid #30363d;
+                background-color: #1a1a1a;
+                border: 1px solid #2d2d2d;
                 border-radius: 8px;
             }
         """)
@@ -122,7 +122,7 @@ class SplashScreen(QDialog):
 
         # --- Header ---
         dot = QLabel("◆")
-        dot.setStyleSheet("color: #58a6ff; font-size: 18px; background: transparent;")
+        dot.setStyleSheet("color: #ffdc00; font-size: 18px; background: transparent;")
 
         title = QLabel("Options Backtesting")
         title.setObjectName("title")
@@ -134,7 +134,7 @@ class SplashScreen(QDialog):
         title_row.addStretch()
 
         version = QLabel("v3.0")
-        version.setStyleSheet("color: #30363d; font-size: 11px; background: transparent;")
+        version.setStyleSheet("color: #3a3a3a; font-size: 11px; background: transparent;")
         title_row.addWidget(version)
 
         outer.addLayout(title_row)

@@ -61,17 +61,19 @@ class IndicatorsTab(QWidget):
 
         # Auto-direction info banner
         banner = QFrame()
+        acc = C['accent']
+        r, g, b = int(acc[1:3], 16), int(acc[3:5], 16), int(acc[5:7], 16)
         banner.setStyleSheet(
-            "QFrame { background-color: rgba(88, 166, 255, 0.08); "
-            "border: 1px solid rgba(88, 166, 255, 0.35); "
-            "border-left: 3px solid #58a6ff; border-radius: 4px; }"
+            f"QFrame {{ background-color: rgba({r}, {g}, {b}, 0.08); "
+            f"border: 1px solid rgba({r}, {g}, {b}, 0.35); "
+            f"border-left: 3px solid {acc}; border-radius: 4px; }}"
         )
         banner_layout = QVBoxLayout(banner)
         banner_layout.setContentsMargins(12, 10, 12, 10)
         banner_layout.setSpacing(4)
 
         banner_title = QLabel("Conditions are set automatically")
-        banner_title.setStyleSheet("font-weight: bold; color: #58a6ff; border: none; background: transparent;")
+        banner_title.setStyleSheet(f"font-weight: bold; color: {C['accent']}; border: none; background: transparent;")
         banner_layout.addWidget(banner_title)
 
         banner_body = QLabel(

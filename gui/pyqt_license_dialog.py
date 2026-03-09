@@ -108,10 +108,10 @@ class LicenseDialog(QDialog):
         self.activate_btn = QPushButton("Activate")
         self.activate_btn.setMinimumHeight(36)
         self.activate_btn.setStyleSheet(
-            f"QPushButton {{ background: {C['accent']}; color: #0d1117; border: none; "
+            f"QPushButton {{ background: {C['accent']}; color: {C['bg']}; border: none; "
             f"border-radius: 4px; font-weight: bold; padding: 6px 24px; }}"
-            f"QPushButton:hover {{ background: #79b8ff; }}"
-            f"QPushButton:pressed {{ background: #388bfd; }}"
+            f"QPushButton:hover {{ background: #e6c800; }}"
+            f"QPushButton:pressed {{ background: #c8a800; }}"
         )
         self.activate_btn.clicked.connect(self._activate)
         self.activate_btn.setDefault(True)
