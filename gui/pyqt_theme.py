@@ -11,7 +11,7 @@ DARK_COLORS = {
     "card_border": "#30363d",
     "text": "#f0f6fc",
     "dim": "#8b949e",
-    "accent": "#58a6ff",
+    "accent": "#ffdc00",
     "up": "#3fb950",
     "down": "#f85149",
     "yellow": "#e3b341",
@@ -28,7 +28,7 @@ LIGHT_COLORS = {
     "card_border": "#d0d7de",
     "text": "#1f2328",
     "dim": "#656d76",
-    "accent": "#0969da",
+    "accent": "#b08800",
     "up": "#1a7f37",
     "down": "#cf222e",
     "yellow": "#9a6700",
@@ -138,7 +138,7 @@ QPushButton#primary {{
 }}
 
 QPushButton#primary:hover {{
-    background-color: {'#79b8ff' if c is DARK_COLORS or c.get('bg') == '#0d1117' else '#0550ae'};
+    background-color: {'#e6c800' if c is DARK_COLORS or c.get('bg') == '#0d1117' else '#8a6d00'};
 }}
 
 QPushButton#success {{

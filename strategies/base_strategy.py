@@ -810,9 +810,28 @@ class IndicatorManager:
         self.Log(f"Stop Loss Mode: {{config.stop_loss_mode}} ({{config.stop_loss_pct}}%)")"""
 
     @staticmethod
+    def generate_sizing_config_string(trading_rules):
+        """Generate position sizing config fields for _build_config_json"""
+        return (
+            f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+            f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+            f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+            f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
+        )
+
+    @staticmethod
     def generate_position_tracking():
         """Common position tracking methods"""
         return """
+    def calculate_contracts(self, max_loss_per_contract):
+        \"\"\"Calculate number of contracts based on position sizing settings\"\"\"
+        if self.config.sizing_mode == 'pct_capital' and max_loss_per_contract > 0:
+            portfolio_value = self.Portfolio.TotalPortfolioValue
+            risk_amount = portfolio_value * (self.config.sizing_risk_pct / 100)
+            contracts = max(1, int(risk_amount / max_loss_per_contract))
+            return min(contracts, self.config.sizing_max_contracts)
+        return self.config.sizing_contracts
+
     def update_positions(self, data):
         \"\"\"Update all open positions with current P&L and MAE/MFE\"\"\"
 

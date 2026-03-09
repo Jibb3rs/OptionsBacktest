@@ -108,6 +108,10 @@ class LongPut(BaseStrategy):
         config_str += f"        'profit_target_pct': {trading_rules.get('profit_target_pct', 100)},\n"
         config_str += f"        'stop_loss_mode': '{stop_loss_mode}',\n"
         config_str += f"        'stop_loss_pct': {trading_rules.get('stop_loss_pct', 50)},\n"
+        config_str += f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+        config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+        config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+        config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'long_put': {abs(formatted_deltas.get('long_put', 0.50))}\n"
         config_str += "        },\n"
@@ -265,7 +269,10 @@ class LongPutStrategy:
             self.algo.Log(f"Max Loss: ${max_loss:.2f}")
             self.algo.Log(f"Max Profit: ${max_profit:.2f}")
 
-            self.algo.MarketOrder(strikes['long_put'].Symbol, 1)
+            contracts = self.algo.calculate_contracts(max_loss)
+            self.algo.Log(f"Contracts: {contracts}")
+
+            self.algo.MarketOrder(strikes['long_put'].Symbol, contracts)
 
             self.algo.Log("[+] Order placed")
 
@@ -274,6 +281,7 @@ class LongPutStrategy:
 
             self.algo.positions[pos_id] = {
                 'status': 'open',
+                'contracts': contracts,
                 'entry_time': time,
                 'entry_underlying_price': underlying_price,
                 'expiry_date': strikes['long_put'].Expiry.date(),
@@ -331,8 +339,9 @@ class LongPutStrategy:
         try:
             pos = self.algo.positions[pos_id]
             strikes = pos['strikes']
+            pos_contracts = pos.get('contracts', 1)
 
-            self.algo.MarketOrder(strikes['long_put'].Symbol, -1)
+            self.algo.MarketOrder(strikes['long_put'].Symbol, -pos_contracts)
 
             final_pnl = pos['current_pnl']
             mae = pos['metrics']['mae']

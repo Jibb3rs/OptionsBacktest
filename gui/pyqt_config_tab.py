@@ -269,6 +269,44 @@ class ConfigTab(QWidget):
         self.stop_loss_mode.setMaximumWidth(350)
         create_form_row("Stop Loss Mode:", self.stop_loss_mode, rules_layout, LABEL_WIDTH)
 
+        # Position Sizing
+        self.sizing_mode = QComboBox()
+        self.sizing_mode.addItems([
+            "Fixed Contracts",
+            "% of Capital (Risk-Based)"
+        ])
+        self.sizing_mode.setMinimumWidth(250)
+        self.sizing_mode.setMaximumWidth(350)
+        self.sizing_mode.currentIndexChanged.connect(self._on_sizing_mode_changed)
+        create_form_row("Position Sizing:", self.sizing_mode, rules_layout, LABEL_WIDTH)
+
+        self.sizing_contracts = QSpinBox()
+        self.sizing_contracts.setRange(1, 100)
+        self.sizing_contracts.setValue(1)
+        self.sizing_contracts.setSuffix(" contracts")
+        self.sizing_contracts.setMinimumWidth(INPUT_WIDTH)
+        self.sizing_contracts.setMaximumWidth(200)
+        create_form_row("Contracts:", self.sizing_contracts, rules_layout, LABEL_WIDTH)
+
+        self.sizing_risk_pct = QDoubleSpinBox()
+        self.sizing_risk_pct.setRange(0.1, 100.0)
+        self.sizing_risk_pct.setValue(2.0)
+        self.sizing_risk_pct.setSuffix("% of capital")
+        self.sizing_risk_pct.setDecimals(1)
+        self.sizing_risk_pct.setMinimumWidth(INPUT_WIDTH)
+        self.sizing_risk_pct.setMaximumWidth(200)
+        self.sizing_risk_pct.setVisible(False)
+        create_form_row("Risk Per Trade:", self.sizing_risk_pct, rules_layout, LABEL_WIDTH)
+
+        self.sizing_max_contracts = QSpinBox()
+        self.sizing_max_contracts.setRange(1, 100)
+        self.sizing_max_contracts.setValue(10)
+        self.sizing_max_contracts.setSuffix(" max")
+        self.sizing_max_contracts.setMinimumWidth(INPUT_WIDTH)
+        self.sizing_max_contracts.setMaximumWidth(200)
+        self.sizing_max_contracts.setVisible(False)
+        create_form_row("Max Contracts Cap:", self.sizing_max_contracts, rules_layout, LABEL_WIDTH)
+
         # Generate Button
         button_layout = QHBoxLayout()
         button_layout.addStretch()
@@ -346,6 +384,13 @@ class ConfigTab(QWidget):
         # Initialize
         self._on_strategy_changed()
         self._on_strike_method_changed()
+
+    def _on_sizing_mode_changed(self):
+        """Show/hide sizing controls based on mode"""
+        is_pct = self.sizing_mode.currentIndex() == 1
+        self.sizing_contracts.setVisible(not is_pct)
+        self.sizing_risk_pct.setVisible(is_pct)
+        self.sizing_max_contracts.setVisible(is_pct)
 
     def _on_strategy_changed(self):
         """Handle strategy selection change"""
@@ -721,7 +766,11 @@ class ConfigTab(QWidget):
                 'min_days_between_trades': self.min_days.value(),
                 'profit_target_pct': self.profit_target.value(),
                 'stop_loss_pct': self.stop_loss.value(),
-                'stop_loss_mode': self.stop_loss_mode.currentText()
+                'stop_loss_mode': self.stop_loss_mode.currentText(),
+                'sizing_mode': 'pct_capital' if self.sizing_mode.currentIndex() == 1 else 'fixed',
+                'sizing_contracts': self.sizing_contracts.value(),
+                'sizing_risk_pct': self.sizing_risk_pct.value(),
+                'sizing_max_contracts': self.sizing_max_contracts.value()
             }
         }
 

@@ -101,6 +101,10 @@ class ButterflySpread(BaseStrategy):
         config_str += f"        'profit_target_pct': {trading_rules.get('profit_target_pct', 100)},\n"
         config_str += f"        'stop_loss_mode': '{stop_loss_mode}',\n"
         config_str += f"        'stop_loss_pct': {trading_rules.get('stop_loss_pct', 50)},\n"
+        config_str += f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+        config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+        config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+        config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'center_delta': {formatted_deltas.get('center_delta', 0.50)},\n"
         config_str += f"            'wing_width': {formatted_deltas.get('wing_width', 5)}\n"
@@ -282,9 +286,12 @@ class ButterflySpreadStrategy:
             self.algo.Log(f"Max Profit: ${max_profit:.2f}")
             self.algo.Log(f"Max Loss: ${max_loss:.2f}")
 
-            self.algo.MarketOrder(strikes['lower_call'].Symbol, 1)   # Buy lower wing
-            self.algo.MarketOrder(strikes['middle_call'].Symbol, -2) # Sell 2 middle
-            self.algo.MarketOrder(strikes['upper_call'].Symbol, 1)   # Buy upper wing
+            contracts = self.algo.calculate_contracts(max_loss)
+            self.algo.Log(f"Contracts: {contracts}")
+
+            self.algo.MarketOrder(strikes['lower_call'].Symbol, contracts)    # Buy lower wing
+            self.algo.MarketOrder(strikes['middle_call'].Symbol, -2 * contracts) # Sell 2 middle
+            self.algo.MarketOrder(strikes['upper_call'].Symbol, contracts)    # Buy upper wing
 
             self.algo.Log("[+] Orders placed")
 
@@ -293,6 +300,7 @@ class ButterflySpreadStrategy:
 
             self.algo.positions[pos_id] = {
                 'status': 'open',
+                'contracts': contracts,
                 'entry_time': time,
                 'entry_underlying_price': underlying_price,
                 'expiry_date': strikes['lower_call'].Expiry.date(),
@@ -363,10 +371,11 @@ class ButterflySpreadStrategy:
         try:
             pos = self.algo.positions[pos_id]
             strikes = pos['strikes']
+            pos_contracts = pos.get('contracts', 1)
 
-            self.algo.MarketOrder(strikes['lower_call'].Symbol, -1)
-            self.algo.MarketOrder(strikes['middle_call'].Symbol, 2)
-            self.algo.MarketOrder(strikes['upper_call'].Symbol, -1)
+            self.algo.MarketOrder(strikes['lower_call'].Symbol, -pos_contracts)
+            self.algo.MarketOrder(strikes['middle_call'].Symbol, 2 * pos_contracts)
+            self.algo.MarketOrder(strikes['upper_call'].Symbol, -pos_contracts)
 
             final_pnl = pos['current_pnl']
             mae = pos['metrics']['mae']

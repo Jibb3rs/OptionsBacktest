@@ -102,6 +102,10 @@ class CoveredCall(BaseStrategy):
         config_str += f"        'profit_target_pct': {trading_rules.get('profit_target_pct', 100)},\n"
         config_str += f"        'stop_loss_mode': '{stop_loss_mode}',\n"
         config_str += f"        'stop_loss_pct': {trading_rules.get('stop_loss_pct', 50)},\n"
+        config_str += f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+        config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+        config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+        config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'short_call': {formatted_deltas.get('short_call', 0.30)}\n"
         config_str += "        },\n"
@@ -266,10 +270,13 @@ class CoveredCallStrategy:
             self.algo.Log(f"Max Profit (if called): ${max_profit:.2f}")
             self.algo.Log(f"Breakeven: ${net_cost/100:.2f}")
 
-            # Buy 100 shares of stock
-            self.algo.MarketOrder(self.algo.config.ticker, 100)
-            # Sell 1 call
-            self.algo.MarketOrder(strikes['short_call'].Symbol, -1)
+            contracts = self.algo.calculate_contracts(max_loss)
+            self.algo.Log(f"Contracts: {contracts}")
+
+            # Buy 100 shares of stock per contract
+            self.algo.MarketOrder(self.algo.config.ticker, 100 * contracts)
+            # Sell calls
+            self.algo.MarketOrder(strikes['short_call'].Symbol, -contracts)
 
             self.algo.Log("[+] Orders placed")
 
@@ -278,6 +285,7 @@ class CoveredCallStrategy:
 
             self.algo.positions[pos_id] = {
                 'status': 'open',
+                'contracts': contracts,
                 'entry_time': time,
                 'entry_underlying_price': underlying_price,
                 'expiry_date': strikes['short_call'].Expiry.date(),
@@ -340,11 +348,12 @@ class CoveredCallStrategy:
         try:
             pos = self.algo.positions[pos_id]
             strikes = pos['strikes']
+            pos_contracts = pos.get('contracts', 1)
 
             # Sell stock
-            self.algo.MarketOrder(self.algo.config.ticker, -100)
-            # Buy back call
-            self.algo.MarketOrder(strikes['short_call'].Symbol, 1)
+            self.algo.MarketOrder(self.algo.config.ticker, -100 * pos_contracts)
+            # Buy back calls
+            self.algo.MarketOrder(strikes['short_call'].Symbol, pos_contracts)
 
             final_pnl = pos['current_pnl']
             mae = pos['metrics']['mae']

@@ -108,6 +108,10 @@ class JadeLizard(BaseStrategy):
         config_str += f"        'profit_target_pct': {trading_rules.get('profit_target_pct', 100)},\n"
         config_str += f"        'stop_loss_mode': '{stop_loss_mode}',\n"
         config_str += f"        'stop_loss_pct': {trading_rules.get('stop_loss_pct', 50)},\n"
+        config_str += f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+        config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+        config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+        config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'short_put': {formatted_deltas.get('short_put', 0.20)},\n"
         config_str += f"            'short_call': {formatted_deltas.get('short_call', 0.30)},\n"
@@ -303,9 +307,13 @@ class JadeLizardStrategy:
             self.algo.Log(f"Upside Risk: ${upside_risk:.2f}" + (" (NO RISK)" if upside_risk <= 0 else ""))
             self.algo.Log(f"Downside Risk: ${downside_risk:.2f}")
 
-            self.algo.MarketOrder(strikes['short_put'].Symbol, -1)
-            self.algo.MarketOrder(strikes['short_call'].Symbol, -1)
-            self.algo.MarketOrder(strikes['long_call'].Symbol, 1)
+            max_loss = max(upside_risk, downside_risk)
+            contracts = self.algo.calculate_contracts(max_loss)
+            self.algo.Log(f"Contracts: {contracts}")
+
+            self.algo.MarketOrder(strikes['short_put'].Symbol, -contracts)
+            self.algo.MarketOrder(strikes['short_call'].Symbol, -contracts)
+            self.algo.MarketOrder(strikes['long_call'].Symbol, contracts)
 
             self.algo.Log("[+] Orders placed")
 
@@ -314,6 +322,7 @@ class JadeLizardStrategy:
 
             self.algo.positions[pos_id] = {
                 'status': 'open',
+                'contracts': contracts,
                 'entry_time': time,
                 'entry_underlying_price': underlying_price,
                 'expiry_date': strikes['short_put'].Expiry.date(),
@@ -385,10 +394,11 @@ class JadeLizardStrategy:
         try:
             pos = self.algo.positions[pos_id]
             strikes = pos['strikes']
+            pos_contracts = pos.get('contracts', 1)
 
-            self.algo.MarketOrder(strikes['short_put'].Symbol, 1)
-            self.algo.MarketOrder(strikes['short_call'].Symbol, 1)
-            self.algo.MarketOrder(strikes['long_call'].Symbol, -1)
+            self.algo.MarketOrder(strikes['short_put'].Symbol, pos_contracts)
+            self.algo.MarketOrder(strikes['short_call'].Symbol, pos_contracts)
+            self.algo.MarketOrder(strikes['long_call'].Symbol, -pos_contracts)
 
             final_pnl = pos['current_pnl']
             mae = pos['metrics']['mae']

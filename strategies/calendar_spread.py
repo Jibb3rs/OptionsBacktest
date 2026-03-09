@@ -105,6 +105,10 @@ class CalendarSpread(BaseStrategy):
         config_str += f"        'profit_target_pct': {trading_rules.get('profit_target_pct', 100)},\n"
         config_str += f"        'stop_loss_mode': '{stop_loss_mode}',\n"
         config_str += f"        'stop_loss_pct': {trading_rules.get('stop_loss_pct', 50)},\n"
+        config_str += f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
+        config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
+        config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
+        config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'strike_delta': {formatted_deltas.get('strike_delta', 0.50)},\n"
         config_str += f"            'near_expiry_days': {formatted_deltas.get('near_expiry_days', 30)},\n"
@@ -284,8 +288,11 @@ class CalendarSpreadStrategy:
             self.algo.Log(f"Net Debit: ${net_debit:.2f}")
             self.algo.Log(f"Max Loss: ${max_loss:.2f}")
 
-            self.algo.MarketOrder(strikes['long_call'].Symbol, 1)   # Buy far-term
-            self.algo.MarketOrder(strikes['short_call'].Symbol, -1) # Sell near-term
+            contracts = self.algo.calculate_contracts(max_loss)
+            self.algo.Log(f"Contracts: {contracts}")
+
+            self.algo.MarketOrder(strikes['long_call'].Symbol, contracts)    # Buy far-term
+            self.algo.MarketOrder(strikes['short_call'].Symbol, -contracts)  # Sell near-term
 
             self.algo.Log("[+] Orders placed")
 
@@ -294,6 +301,7 @@ class CalendarSpreadStrategy:
 
             self.algo.positions[pos_id] = {
                 'status': 'open',
+                'contracts': contracts,
                 'entry_time': time,
                 'entry_underlying_price': underlying_price,
                 'expiry_date': strikes['short_call'].Expiry.date(),  # Track near-term expiry
@@ -361,9 +369,10 @@ class CalendarSpreadStrategy:
         try:
             pos = self.algo.positions[pos_id]
             strikes = pos['strikes']
+            pos_contracts = pos.get('contracts', 1)
 
-            self.algo.MarketOrder(strikes['long_call'].Symbol, -1)
-            self.algo.MarketOrder(strikes['short_call'].Symbol, 1)
+            self.algo.MarketOrder(strikes['long_call'].Symbol, -pos_contracts)
+            self.algo.MarketOrder(strikes['short_call'].Symbol, pos_contracts)
 
             final_pnl = pos['current_pnl']
             mae = pos['metrics']['mae']
