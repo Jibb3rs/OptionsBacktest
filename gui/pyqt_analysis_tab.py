@@ -109,7 +109,7 @@ class AnalysisTab(QWidget):
         # Stats table
         self.stats_table = QTableWidget()
         self.stats_table.setColumnCount(4)
-        self.stats_table.setHorizontalHeaderLabels(["Metric", "Value", "Metric", "Value"])
+        self.stats_table.setHorizontalHeaderLabels(["Metric", "Value", "Metric ", "Value "])
         self.stats_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.stats_table.verticalHeader().hide()
         self.stats_table.setAlternatingRowColors(True)

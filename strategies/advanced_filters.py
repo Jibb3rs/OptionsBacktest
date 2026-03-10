@@ -818,3 +818,50 @@ class AdvancedGreeksFilter:
 
         return filtered
 
+
+class EarningsFilter:
+    """Skip trade entries within N days of an earnings announcement"""
+
+    def __init__(self, algo):
+        self.algo = algo
+
+    def should_enter_trade(self, ticker, skip_days):
+        """Return False if earnings are within skip_days"""
+        try:
+            security = self.algo.Securities[ticker]
+            # QuantConnect exposes earnings date via Fundamentals
+            fundamentals = getattr(security, 'Fundamentals', None)
+            if fundamentals is None:
+                return True
+
+            earnings_dates = getattr(
+                getattr(getattr(fundamentals, 'EarningReports', None), 'EarningsDate', None),
+                'Value', None
+            )
+            if not earnings_dates:
+                return True
+
+            # earnings_dates may be a single datetime or a list
+            if not hasattr(earnings_dates, '__iter__') or isinstance(earnings_dates, str):
+                earnings_dates = [earnings_dates]
+
+            current_date = self.algo.Time.date()
+            for ed in earnings_dates:
+                try:
+                    if hasattr(ed, 'date'):
+                        ed = ed.date()
+                    days_diff = abs((ed - current_date).days)
+                    if days_diff <= skip_days:
+                        self.algo.Log(
+                            f"[X] Earnings filter: {ticker} earnings on {ed} "
+                            f"({days_diff}d away, skip={skip_days}d)"
+                        )
+                        return False
+                except Exception:
+                    continue
+
+            return True
+
+        except Exception as e:
+            self.algo.Log(f"[!] Earnings filter error: {e}")
+            return True  # fail open — don't block trade on error

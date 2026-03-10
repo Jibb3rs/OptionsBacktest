@@ -112,6 +112,8 @@ class JadeLizard(BaseStrategy):
         config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
         config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
         config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
+        config_str += f"        'close_dte': {config.get('close_dte', 21)},\n"
+        config_str += f"        'min_rr_ratio': {trading_rules.get('min_rr_ratio', 0.0)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'short_put': {formatted_deltas.get('short_put', 0.20)},\n"
         config_str += f"            'short_call': {formatted_deltas.get('short_call', 0.30)},\n"
@@ -308,6 +310,12 @@ class JadeLizardStrategy:
             self.algo.Log(f"Downside Risk: ${downside_risk:.2f}")
 
             max_loss = max(upside_risk, downside_risk)
+            # Min R/R ratio enforcement
+            if getattr(self.algo.config, 'min_rr_ratio', 0) > 0 and max_loss > 0:
+                rr = max_profit / max_loss
+                if rr < self.algo.config.min_rr_ratio:
+                    self.algo.Log(f"[X] Skip: R/R {rr:.2f} < min {self.algo.config.min_rr_ratio:.1f}")
+                    return None
             contracts = self.algo.calculate_contracts(max_loss)
             self.algo.Log(f"Contracts: {contracts}")
 

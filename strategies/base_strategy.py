@@ -444,9 +444,12 @@ class IndicatorManager:
             'advanced_greeks_enabled': {'AdvancedGreeksFilter'},
         }
 
+        # earnings_enabled defaults True, all others default False
+        earnings_default = {'earnings_enabled': True}
         needed_classes = set(always_needed)
         for flag, classes in optional_filters.items():
-            if advanced_config.get(flag, False):
+            default = earnings_default.get(flag, False)
+            if advanced_config.get(flag, default):
                 needed_classes.update(classes)
 
         filters_code = "\nfrom datetime import timedelta\n\n"
@@ -548,7 +551,11 @@ class IndicatorManager:
         # Advanced Greeks Filters (Contract-Level)
         config_str += f"            'advanced_greeks_enabled': {str(advanced_config.get('advanced_greeks_enabled', False))},\n"
         config_str += f"            'gamma_filter_enabled': {str(advanced_config.get('gamma_filter_enabled', False))},\n"
-        config_str += f"            'max_gamma': {advanced_config.get('max_gamma', 0.05)}\n"
+        config_str += f"            'max_gamma': {advanced_config.get('max_gamma', 0.05)},\n"
+
+        # Earnings avoidance
+        config_str += f"            'earnings_enabled': {str(advanced_config.get('earnings_enabled', True))},\n"
+        config_str += f"            'earnings_skip_days': {advanced_config.get('earnings_skip_days', 7)}\n"
 
         config_str += "        }"
 
@@ -664,6 +671,11 @@ class IndicatorManager:
                 filter_init += f"        self.advanced_greeks_filter.configure({', '.join(configure_params)})\n"
             filter_init += "        self.Log('[+] Advanced Greeks filter enabled (contract-level)')\n"
 
+        # Earnings avoidance filter
+        if advanced_config.get('earnings_enabled', True):
+            filter_init += "        self.earnings_filter = EarningsFilter(self)\n"
+            filter_init += "        self.Log('[+] Earnings avoidance filter enabled')\n"
+
         return filter_init
 
     @staticmethod
@@ -750,6 +762,16 @@ class IndicatorManager:
             # Or check individual: if self.advanced_greeks_filter.should_enter_contract(contract)
 """
 
+        # Earnings avoidance
+        if advanced_config.get('earnings_enabled', True):
+            skip_days = advanced_config.get('earnings_skip_days', 7)
+            filter_checks += f"""
+            # Earnings Avoidance Filter
+            if hasattr(self, 'earnings_filter'):
+                if not self.earnings_filter.should_enter_trade(self.config.ticker, {skip_days}):
+                    return
+"""
+
         return filter_checks
     
     @staticmethod
@@ -810,13 +832,17 @@ class IndicatorManager:
         self.Log(f"Stop Loss Mode: {{config.stop_loss_mode}} ({{config.stop_loss_pct}}%)")"""
 
     @staticmethod
-    def generate_sizing_config_string(trading_rules):
-        """Generate position sizing config fields for _build_config_json"""
+    def generate_sizing_config_string(trading_rules, config=None):
+        """Generate position sizing + exit config fields for _build_config_json"""
+        close_dte = (config or {}).get('close_dte', trading_rules.get('close_dte', 21))
+        min_rr = trading_rules.get('min_rr_ratio', 0.0)
         return (
             f"        'sizing_mode': '{trading_rules.get('sizing_mode', 'fixed')}',\n"
             f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
             f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
             f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
+            f"        'close_dte': {close_dte},\n"
+            f"        'min_rr_ratio': {min_rr},\n"
         )
 
     @staticmethod
@@ -905,9 +931,11 @@ class IndicatorManager:
         # Check stop loss
 {stop_loss_block}
         
-        # Check expiration (1 day before)
+        # Check close DTE (close early to avoid gamma blowup)
         expiry_date = pos['expiry_date']
-        if time.date() >= (expiry_date - timedelta(days=1)):
+        close_dte = getattr(self.config, 'close_dte', 1)
+        days_to_expiry = (expiry_date - time.date()).days
+        if days_to_expiry <= max(close_dte, 1):
             return 'expiration'
         
         return None

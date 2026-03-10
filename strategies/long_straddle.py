@@ -114,6 +114,8 @@ class LongStraddle(BaseStrategy):
         config_str += f"        'sizing_contracts': {trading_rules.get('sizing_contracts', 1)},\n"
         config_str += f"        'sizing_risk_pct': {trading_rules.get('sizing_risk_pct', 2.0)},\n"
         config_str += f"        'sizing_max_contracts': {trading_rules.get('sizing_max_contracts', 10)},\n"
+        config_str += f"        'close_dte': {config.get('close_dte', 21)},\n"
+        config_str += f"        'min_rr_ratio': {trading_rules.get('min_rr_ratio', 0.0)},\n"
         config_str += "        'deltas': {\n"
         config_str += f"            'long_put': {abs(formatted_deltas.get('long_put', 0.50))},\n"
         config_str += f"            'long_call': {abs(formatted_deltas.get('long_call', 0.50))}\n"
@@ -276,6 +278,12 @@ class LongStraddleStrategy:
             self.algo.Log(f"Max Profit: Unlimited")
             self.algo.Log(f"Breakevens: {strikes['long_put'].Strike - net_debit/100:.2f} / {strikes['long_call'].Strike + net_debit/100:.2f}")
 
+            # Min R/R ratio enforcement
+            if getattr(self.algo.config, 'min_rr_ratio', 0) > 0 and max_loss > 0:
+                rr = max_profit / max_loss
+                if rr < self.algo.config.min_rr_ratio:
+                    self.algo.Log(f"[X] Skip: R/R {rr:.2f} < min {self.algo.config.min_rr_ratio:.1f}")
+                    return None
             contracts = self.algo.calculate_contracts(max_loss)
             self.algo.Log(f"Contracts: {contracts}")
 

@@ -198,6 +198,20 @@ class ConfigTab(QWidget):
         self.expiry_range.setSuffix(" days")
         create_form_row("Expiry Range (±):", self.expiry_range, expiry_layout, LABEL_WIDTH)
 
+        # Close DTE — close position X days before expiry to avoid gamma blowup
+        self.close_dte = QSpinBox()
+        self.close_dte.setRange(0, 60)
+        self.close_dte.setValue(21)
+        self.close_dte.setMinimumWidth(INPUT_WIDTH)
+        self.close_dte.setMaximumWidth(200)
+        self.close_dte.setSuffix(" days before expiry")
+        create_form_row("Close Position At:", self.close_dte, expiry_layout, LABEL_WIDTH)
+
+        close_dte_note = QLabel("Pro tip: 21 DTE exits avoid gamma blowup and lock in most of the theta decay")
+        close_dte_note.setStyleSheet(f"color: {C['dim']}; font-size: 12px; padding-left: 8px;")
+        close_dte_note.setWordWrap(True)
+        expiry_layout.addWidget(close_dte_note)
+
         # Strike Selection Section
         strike_panel, strike_layout = create_panel("Strike Selection")
         layout.addWidget(strike_panel)
@@ -269,6 +283,22 @@ class ConfigTab(QWidget):
         self.stop_loss_mode.setMaximumWidth(350)
         create_form_row("Stop Loss Mode:", self.stop_loss_mode, rules_layout, LABEL_WIDTH)
 
+        # Min R/R ratio enforcement
+        self.min_rr_ratio = QDoubleSpinBox()
+        self.min_rr_ratio.setRange(0.0, 10.0)
+        self.min_rr_ratio.setValue(0.0)
+        self.min_rr_ratio.setDecimals(1)
+        self.min_rr_ratio.setSingleStep(0.1)
+        self.min_rr_ratio.setMinimumWidth(INPUT_WIDTH)
+        self.min_rr_ratio.setMaximumWidth(200)
+        self.min_rr_ratio.setToolTip("Skip trades where reward/risk is below this ratio. 0 = disabled.")
+        create_form_row("Min R/R Ratio:", self.min_rr_ratio, rules_layout, LABEL_WIDTH)
+
+        min_rr_note = QLabel("Set > 0 to skip low-quality setups (e.g. 0.3 skips trades paying < $0.30 per $1.00 risk)")
+        min_rr_note.setStyleSheet(f"color: {C['dim']}; font-size: 12px; padding-left: 8px;")
+        min_rr_note.setWordWrap(True)
+        rules_layout.addWidget(min_rr_note)
+
         # Position Sizing
         self.sizing_mode = QComboBox()
         self.sizing_mode.addItems([
@@ -326,53 +356,58 @@ class ConfigTab(QWidget):
         self.rr_panel.setObjectName("panel")
         self.rr_panel.setVisible(False)
         rr_outer = QVBoxLayout(self.rr_panel)
-        rr_outer.setContentsMargins(16, 12, 16, 12)
-        rr_outer.setSpacing(8)
+        rr_outer.setContentsMargins(16, 14, 16, 14)
+        rr_outer.setSpacing(10)
 
         self.rr_header_label = QLabel("Estimated R/R per Trade")
         self.rr_header_label.setObjectName("header")
         rr_outer.addWidget(self.rr_header_label)
 
         self.rr_type_label = QLabel()
-        self.rr_type_label.setStyleSheet(f"color: {C['dim']}; font-size: 9pt;")
+        self.rr_type_label.setStyleSheet(f"color: {C['dim']}; font-size: 12px;")
         rr_outer.addWidget(self.rr_type_label)
 
-        # Four metric columns
-        rr_metrics = QHBoxLayout()
-        rr_metrics.setSpacing(0)
-
-        def make_metric_col(title):
-            col = QVBoxLayout()
-            col.setSpacing(2)
-            title_lbl = QLabel(title)
-            title_lbl.setStyleSheet(f"color: {C['dim']}; font-size: 8pt;")
+        # 2×2 metric card grid
+        def make_metric_card(title, color=None):
+            card = QFrame()
+            card.setStyleSheet(
+                f"QFrame {{ background-color: {C['alt_bg']}; border: 1px solid {C['card_border']}; "
+                f"border-radius: 6px; }}"
+            )
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(14, 10, 14, 10)
+            card_layout.setSpacing(4)
             val_lbl = QLabel("—")
-            val_lbl.setStyleSheet("font-size: 14pt; font-weight: bold;")
-            col.addWidget(title_lbl)
-            col.addWidget(val_lbl)
-            sep = QFrame()
-            sep.setFrameShape(QFrame.VLine)
-            sep.setStyleSheet(f"color: {C['card_border']};")
-            return col, val_lbl, sep
+            style = "font-size: 18px; font-weight: bold;"
+            if color:
+                style += f" color: {color};"
+            val_lbl.setStyleSheet(style)
+            title_lbl = QLabel(title)
+            title_lbl.setStyleSheet(f"color: {C['dim']}; font-size: 12px;")
+            card_layout.addWidget(val_lbl)
+            card_layout.addWidget(title_lbl)
+            return card, val_lbl
 
-        win_col, self.rr_win_label, sep1 = make_metric_col("Max Win")
-        loss_col, self.rr_loss_label, sep2 = make_metric_col("Max Stop")
-        ratio_col, self.rr_ratio_label, sep3 = make_metric_col("R/R Ratio")
-        be_col, self.rr_breakeven_label, _ = make_metric_col("Min Win Rate")
+        win_card, self.rr_win_label = make_metric_card("Max Win", C['up'])
+        loss_card, self.rr_loss_label = make_metric_card("Max Stop", C['down'])
+        ratio_card, self.rr_ratio_label = make_metric_card("R/R Ratio", C['accent'])
+        be_card, self.rr_breakeven_label = make_metric_card("Min Win Rate")
 
-        self.rr_win_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #4caf50;")
-        self.rr_loss_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #ef5350;")
-        self.rr_ratio_label.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {C['accent']};")
+        rr_row1 = QHBoxLayout()
+        rr_row1.setSpacing(12)
+        rr_row1.addWidget(win_card, 1)
+        rr_row1.addWidget(loss_card, 1)
 
-        for col in (win_col, loss_col, ratio_col, be_col):
-            rr_metrics.addLayout(col)
-            rr_metrics.addSpacing(32)
-        rr_metrics.addStretch()
+        rr_row2 = QHBoxLayout()
+        rr_row2.setSpacing(12)
+        rr_row2.addWidget(ratio_card, 1)
+        rr_row2.addWidget(be_card, 1)
 
-        rr_outer.addLayout(rr_metrics)
+        rr_outer.addLayout(rr_row1)
+        rr_outer.addLayout(rr_row2)
 
         self.rr_note_label = QLabel()
-        self.rr_note_label.setStyleSheet(f"color: {C['dim']}; font-size: 8pt;")
+        self.rr_note_label.setStyleSheet(f"color: {C['dim']}; font-size: 12px;")
         self.rr_note_label.setWordWrap(True)
         rr_outer.addWidget(self.rr_note_label)
 
@@ -757,6 +792,7 @@ class ConfigTab(QWidget):
             'initial_capital': self.capital_input.value(),
             'expiry_days': self.expiry_days.value(),
             'expiry_range': self.expiry_range.value(),
+            'close_dte': self.close_dte.value(),
             'strike_selection': {
                 'method': self.strike_method.currentText(),
                 'deltas': deltas
@@ -767,6 +803,7 @@ class ConfigTab(QWidget):
                 'profit_target_pct': self.profit_target.value(),
                 'stop_loss_pct': self.stop_loss.value(),
                 'stop_loss_mode': self.stop_loss_mode.currentText(),
+                'min_rr_ratio': self.min_rr_ratio.value(),
                 'sizing_mode': 'pct_capital' if self.sizing_mode.currentIndex() == 1 else 'fixed',
                 'sizing_contracts': self.sizing_contracts.value(),
                 'sizing_risk_pct': self.sizing_risk_pct.value(),

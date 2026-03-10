@@ -13,7 +13,7 @@ from PyQt5.QtCore import Qt
 from .pyqt_theme import C
 from .pyqt_main_window import create_panel
 
-LABEL_WIDTH = 160
+LABEL_WIDTH = 180
 INPUT_WIDTH = 130
 
 

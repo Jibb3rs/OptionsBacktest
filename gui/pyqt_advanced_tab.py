@@ -82,7 +82,13 @@ class AdvancedTab(QWidget):
         layout.addWidget(iv_panel)
 
         self.iv_enabled = QCheckBox("Enable IV Rank Filter")
+        self.iv_enabled.setChecked(True)
         iv_layout.addWidget(self.iv_enabled)
+
+        iv_note = QLabel("Credit spreads perform best when IV Rank > 30 — you're selling relatively expensive options")
+        iv_note.setStyleSheet(f"color: {C['dim']}; font-size: 12px; padding: 2px 0 6px 0;")
+        iv_note.setWordWrap(True)
+        iv_layout.addWidget(iv_note)
 
         iv_range_layout = QHBoxLayout()
         iv_range_layout.setSpacing(12)
@@ -92,7 +98,7 @@ class AdvancedTab(QWidget):
 
         self.iv_min = QSpinBox()
         self.iv_min.setRange(0, 100)
-        self.iv_min.setValue(50)
+        self.iv_min.setValue(30)
         self.iv_min.setMinimumWidth(80)
         self.iv_min.setMaximumWidth(100)
         self.iv_min.setSuffix("%")
@@ -243,6 +249,30 @@ class AdvancedTab(QWidget):
         self.mtf_period.setMaximumWidth(250)
         create_form_row("Period (shorter TF):", self.mtf_period, mtf_layout, LABEL_WIDTH)
 
+        # Earnings Avoidance Filter
+        earnings_panel, earnings_layout = create_panel("Earnings Avoidance")
+        layout.addWidget(earnings_panel)
+
+        self.earnings_enabled = QCheckBox("Skip trades near earnings announcements")
+        self.earnings_enabled.setChecked(True)
+        earnings_layout.addWidget(self.earnings_enabled)
+
+        earnings_note = QLabel(
+            "Earnings cause overnight gap risk that destroys credit spreads. "
+            "Skipping entries within the window below protects against sudden moves."
+        )
+        earnings_note.setStyleSheet(f"color: {C['dim']}; font-size: 12px; padding: 2px 0 6px 0;")
+        earnings_note.setWordWrap(True)
+        earnings_layout.addWidget(earnings_note)
+
+        self.earnings_skip_days = QSpinBox()
+        self.earnings_skip_days.setRange(1, 30)
+        self.earnings_skip_days.setValue(7)
+        self.earnings_skip_days.setSuffix(" days")
+        self.earnings_skip_days.setMinimumWidth(INPUT_WIDTH)
+        self.earnings_skip_days.setMaximumWidth(200)
+        create_form_row("Skip window (±):", self.earnings_skip_days, earnings_layout, LABEL_WIDTH)
+
         # Add stretch at bottom
         layout.addStretch()
 
@@ -294,6 +324,10 @@ class AdvancedTab(QWidget):
             'mtf_indicator': self.mtf_indicator.currentText(),
             'mtf_condition': self.mtf_condition.currentText(),
             'mtf_period': self.mtf_period.value(),
+
+            # Earnings avoidance
+            'earnings_enabled': self.earnings_enabled.isChecked(),
+            'earnings_skip_days': self.earnings_skip_days.value(),
         }
 
         # Add individual Greek filters
