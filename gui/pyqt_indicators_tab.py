@@ -5,20 +5,19 @@ Configure technical indicators that gate trade entries
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QCheckBox, QSpinBox, QDoubleSpinBox, QFrame,
-    QScrollArea, QGridLayout
+    QSpinBox, QDoubleSpinBox, QFrame, QScrollArea, QGridLayout
 )
 from PyQt5.QtCore import Qt
 
 from .pyqt_theme import C
-from .pyqt_main_window import create_panel
+from .pyqt_widgets import FilterSection
 
-LABEL_WIDTH = 180
-INPUT_WIDTH = 130
+LABEL_WIDTH = 160
+INPUT_WIDTH = 120
 
 
 def _form_row(label_text, widget, parent_layout):
-    """Add a label + widget row to parent_layout"""
+    """Add a label + widget row to parent_layout."""
     row = QHBoxLayout()
     row.setSpacing(10)
     lbl = QLabel(label_text)
@@ -32,7 +31,7 @@ def _form_row(label_text, widget, parent_layout):
 
 
 class IndicatorsTab(QWidget):
-    """Technical indicator filter configuration tab"""
+    """Technical indicator filter configuration — 2-per-row card grid"""
 
     def __init__(self, main_window):
         super().__init__()
@@ -59,22 +58,24 @@ class IndicatorsTab(QWidget):
         layout.setSpacing(14)
         layout.setContentsMargins(12, 12, 12, 12)
 
-        # Auto-direction info banner
+        # Info banner
         banner = QFrame()
         acc = C['accent']
         r, g, b = int(acc[1:3], 16), int(acc[3:5], 16), int(acc[5:7], 16)
         banner.setStyleSheet(
-            f"QFrame {{ background-color: rgba({r}, {g}, {b}, 0.08); "
-            f"border: 1px solid rgba({r}, {g}, {b}, 0.35); "
+            f"QFrame {{ background-color: rgba({r},{g},{b},0.08); "
+            f"border: 1px solid rgba({r},{g},{b},0.35); "
             f"border-left: 3px solid {acc}; border-radius: 4px; }}"
         )
-        banner_layout = QVBoxLayout(banner)
-        banner_layout.setContentsMargins(12, 10, 12, 10)
-        banner_layout.setSpacing(4)
+        bl = QVBoxLayout(banner)
+        bl.setContentsMargins(12, 10, 12, 10)
+        bl.setSpacing(4)
 
         banner_title = QLabel("Conditions are set automatically")
-        banner_title.setStyleSheet(f"font-weight: bold; color: {C['accent']}; border: none; background: transparent;")
-        banner_layout.addWidget(banner_title)
+        banner_title.setStyleSheet(
+            f"font-weight: bold; color: {C['accent']}; border: none; background: transparent;"
+        )
+        bl.addWidget(banner_title)
 
         banner_body = QLabel(
             "You do not need to configure indicator directions manually. "
@@ -85,149 +86,146 @@ class IndicatorsTab(QWidget):
         )
         banner_body.setWordWrap(True)
         banner_body.setStyleSheet("color: #8b949e; border: none; background: transparent;")
-        banner_layout.addWidget(banner_body)
-
+        bl.addWidget(banner_body)
         layout.addWidget(banner)
 
-        # ---- Oscillators ----
-        self._add_rsi(layout)
-        self._add_macd(layout)
-        self._add_stochastic(layout)
+        # 2-column grid of indicator cards
+        grid = QGridLayout()
+        grid.setSpacing(12)
+        grid.setAlignment(Qt.AlignTop)
 
-        # ---- Volatility ----
-        self._add_atr(layout)
-        self._add_bbands(layout)
+        cards = [
+            self._build_rsi_card(),
+            self._build_macd_card(),
+            self._build_stochastic_card(),
+            self._build_atr_card(),
+            self._build_bbands_card(),
+            self._build_ma_card(),
+            self._build_adx_card(),
+            self._build_vwap_card(),
+            self._build_vix_card(),
+        ]
 
-        # ---- Trend / Moving Averages ----
-        self._add_ma(layout)
-        self._add_adx(layout)
-        self._add_vwap(layout)
+        for i, card in enumerate(cards):
+            grid.addWidget(card, i // 2, i % 2)
 
-        # ---- Market Index ----
-        self._add_vix(layout)
-
+        layout.addLayout(grid)
         layout.addStretch()
 
     # ------------------------------------------------------------------
-    # Individual indicator builders
+    # Card builders — each returns a FilterSection
     # ------------------------------------------------------------------
 
-    def _add_rsi(self, layout):
-        panel, pl = create_panel("RSI  (Relative Strength Index)")
-        layout.addWidget(panel)
-
-        self.rsi_enabled = QCheckBox("Enable RSI Filter")
-        pl.addWidget(self.rsi_enabled)
+    def _build_rsi_card(self):
+        self.rsi_section = FilterSection("RSI  (Relative Strength Index)", initially_enabled=False)
+        bl = self.rsi_section.body_layout()
 
         note = QLabel(
-            "Bullish strategies: waits for oversold. "
-            "Bearish strategies: waits for overbought. "
+            "Bullish: waits for oversold.  Bearish: waits for overbought.  "
             "Neutral: requires price within range."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
 
         self.rsi_period = QSpinBox()
         self.rsi_period.setRange(2, 200)
         self.rsi_period.setValue(14)
-        _form_row("Period:", self.rsi_period, pl)
+        _form_row("Period:", self.rsi_period, bl)
 
         self.rsi_oversold = QSpinBox()
         self.rsi_oversold.setRange(1, 99)
         self.rsi_oversold.setValue(30)
-        _form_row("Oversold Level:", self.rsi_oversold, pl)
+        _form_row("Oversold Level:", self.rsi_oversold, bl)
 
         self.rsi_overbought = QSpinBox()
         self.rsi_overbought.setRange(1, 99)
         self.rsi_overbought.setValue(70)
-        _form_row("Overbought Level:", self.rsi_overbought, pl)
+        _form_row("Overbought Level:", self.rsi_overbought, bl)
 
-    def _add_macd(self, layout):
-        panel, pl = create_panel("MACD  (Moving Average Convergence Divergence)")
-        layout.addWidget(panel)
+        return self.rsi_section
 
-        self.macd_enabled = QCheckBox("Enable MACD Filter")
-        pl.addWidget(self.macd_enabled)
+    def _build_macd_card(self):
+        self.macd_section = FilterSection(
+            "MACD  (Moving Average Convergence Divergence)", initially_enabled=False
+        )
+        bl = self.macd_section.body_layout()
 
         note = QLabel(
-            "Bullish strategies: requires MACD above signal. "
-            "Bearish strategies: requires MACD below signal. "
+            "Bullish: requires MACD above signal.  "
+            "Bearish: requires MACD below signal.  "
             "Neutral: requires MACD close to signal line."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
 
         self.macd_fast = QSpinBox()
         self.macd_fast.setRange(2, 100)
         self.macd_fast.setValue(12)
-        _form_row("Fast Period:", self.macd_fast, pl)
+        _form_row("Fast Period:", self.macd_fast, bl)
 
         self.macd_slow = QSpinBox()
         self.macd_slow.setRange(2, 200)
         self.macd_slow.setValue(26)
-        _form_row("Slow Period:", self.macd_slow, pl)
+        _form_row("Slow Period:", self.macd_slow, bl)
 
         self.macd_signal = QSpinBox()
         self.macd_signal.setRange(2, 50)
         self.macd_signal.setValue(9)
-        _form_row("Signal Period:", self.macd_signal, pl)
+        _form_row("Signal Period:", self.macd_signal, bl)
 
-    def _add_stochastic(self, layout):
-        panel, pl = create_panel("Stochastic Oscillator")
-        layout.addWidget(panel)
+        return self.macd_section
 
-        self.stoch_enabled = QCheckBox("Enable Stochastic Filter")
-        pl.addWidget(self.stoch_enabled)
+    def _build_stochastic_card(self):
+        self.stoch_section = FilterSection("Stochastic Oscillator", initially_enabled=False)
+        bl = self.stoch_section.body_layout()
 
         note = QLabel(
-            "Bullish strategies: waits for oversold. "
-            "Bearish strategies: waits for overbought. "
+            "Bullish: waits for oversold.  Bearish: waits for overbought.  "
             "Neutral: requires price within range."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
 
         self.stoch_period = QSpinBox()
         self.stoch_period.setRange(2, 100)
         self.stoch_period.setValue(14)
-        _form_row("Period:", self.stoch_period, pl)
+        _form_row("Period:", self.stoch_period, bl)
 
         self.stoch_k_smooth = QSpinBox()
         self.stoch_k_smooth.setRange(1, 20)
         self.stoch_k_smooth.setValue(3)
-        _form_row("%K Smoothing:", self.stoch_k_smooth, pl)
+        _form_row("%K Smoothing:", self.stoch_k_smooth, bl)
 
         self.stoch_oversold = QSpinBox()
         self.stoch_oversold.setRange(1, 99)
         self.stoch_oversold.setValue(20)
-        _form_row("Oversold Level:", self.stoch_oversold, pl)
+        _form_row("Oversold Level:", self.stoch_oversold, bl)
 
         self.stoch_overbought = QSpinBox()
         self.stoch_overbought.setRange(1, 99)
         self.stoch_overbought.setValue(80)
-        _form_row("Overbought Level:", self.stoch_overbought, pl)
+        _form_row("Overbought Level:", self.stoch_overbought, bl)
 
-    def _add_atr(self, layout):
-        panel, pl = create_panel("ATR  (Average True Range)")
-        layout.addWidget(panel)
+        return self.stoch_section
 
-        self.atr_enabled = QCheckBox("Enable ATR Filter")
-        pl.addWidget(self.atr_enabled)
+    def _build_atr_card(self):
+        self.atr_section = FilterSection("ATR  (Average True Range)", initially_enabled=False)
+        bl = self.atr_section.body_layout()
 
         self.atr_period = QSpinBox()
         self.atr_period.setRange(2, 200)
         self.atr_period.setValue(14)
-        _form_row("Period:", self.atr_period, pl)
+        _form_row("Period:", self.atr_period, bl)
 
         self.atr_threshold = QDoubleSpinBox()
         self.atr_threshold.setRange(0.01, 50.0)
         self.atr_threshold.setValue(1.5)
         self.atr_threshold.setSingleStep(0.1)
         self.atr_threshold.setDecimals(2)
-        _form_row("Threshold (%):", self.atr_threshold, pl)
+        _form_row("Threshold (%):", self.atr_threshold, bl)
 
         self.atr_condition = QComboBox()
         self.atr_condition.addItems(["high", "low"])
@@ -235,77 +233,74 @@ class IndicatorsTab(QWidget):
             "high = only enter when ATR% > threshold (volatile market)\n"
             "low  = only enter when ATR% < threshold (calm market)"
         )
-        _form_row("Condition:", self.atr_condition, pl)
+        _form_row("Condition:", self.atr_condition, bl)
 
-    def _add_bbands(self, layout):
-        panel, pl = create_panel("Bollinger Bands")
-        layout.addWidget(panel)
+        return self.atr_section
 
-        self.bbands_enabled = QCheckBox("Enable Bollinger Bands Filter")
-        pl.addWidget(self.bbands_enabled)
+    def _build_bbands_card(self):
+        self.bbands_section = FilterSection("Bollinger Bands", initially_enabled=False)
+        bl = self.bbands_section.body_layout()
 
         note = QLabel(
-            "Bullish strategies: price below lower band. "
-            "Bearish strategies: price above upper band. "
+            "Bullish: price below lower band.  "
+            "Bearish: price above upper band.  "
             "Neutral: price inside bands."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
 
         self.bbands_period = QSpinBox()
         self.bbands_period.setRange(2, 200)
         self.bbands_period.setValue(20)
-        _form_row("Period:", self.bbands_period, pl)
+        _form_row("Period:", self.bbands_period, bl)
 
         self.bbands_std_dev = QDoubleSpinBox()
         self.bbands_std_dev.setRange(0.5, 5.0)
         self.bbands_std_dev.setValue(2.0)
         self.bbands_std_dev.setSingleStep(0.5)
         self.bbands_std_dev.setDecimals(1)
-        _form_row("Std Deviations:", self.bbands_std_dev, pl)
+        _form_row("Std Deviations:", self.bbands_std_dev, bl)
 
-    def _add_ma(self, layout):
-        panel, pl = create_panel("Moving Average  (SMA / EMA)")
-        layout.addWidget(panel)
+        return self.bbands_section
 
-        self.ma_enabled = QCheckBox("Enable Moving Average Filter")
-        pl.addWidget(self.ma_enabled)
+    def _build_ma_card(self):
+        self.ma_section = FilterSection("Moving Average  (SMA / EMA)", initially_enabled=False)
+        bl = self.ma_section.body_layout()
 
         note = QLabel(
-            "Bullish strategies: price above MA. "
-            "Bearish strategies: price below MA. "
+            "Bullish: price above MA.  "
+            "Bearish: price below MA.  "
             "Neutral: logs MA value without blocking."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
 
         self.ma_type = QComboBox()
         self.ma_type.addItems(["Simple (SMA)", "Exponential (EMA)"])
-        _form_row("Type:", self.ma_type, pl)
+        _form_row("Type:", self.ma_type, bl)
 
         self.ma_period = QSpinBox()
         self.ma_period.setRange(2, 500)
         self.ma_period.setValue(50)
-        _form_row("Period:", self.ma_period, pl)
+        _form_row("Period:", self.ma_period, bl)
 
-    def _add_adx(self, layout):
-        panel, pl = create_panel("ADX  (Average Directional Index)")
-        layout.addWidget(panel)
+        return self.ma_section
 
-        self.adx_enabled = QCheckBox("Enable ADX Filter")
-        pl.addWidget(self.adx_enabled)
+    def _build_adx_card(self):
+        self.adx_section = FilterSection("ADX  (Average Directional Index)", initially_enabled=False)
+        bl = self.adx_section.body_layout()
 
         self.adx_period = QSpinBox()
         self.adx_period.setRange(2, 100)
         self.adx_period.setValue(14)
-        _form_row("Period:", self.adx_period, pl)
+        _form_row("Period:", self.adx_period, bl)
 
         self.adx_threshold = QSpinBox()
         self.adx_threshold.setRange(5, 60)
         self.adx_threshold.setValue(25)
-        _form_row("Threshold:", self.adx_threshold, pl)
+        _form_row("Threshold:", self.adx_threshold, bl)
 
         self.adx_condition = QComboBox()
         self.adx_condition.addItems(["strong", "weak"])
@@ -313,14 +308,15 @@ class IndicatorsTab(QWidget):
             "strong = only enter when ADX > threshold (trending)\n"
             "weak   = only enter when ADX < threshold (ranging)"
         )
-        _form_row("Condition:", self.adx_condition, pl)
+        _form_row("Condition:", self.adx_condition, bl)
 
-    def _add_vwap(self, layout):
-        panel, pl = create_panel("VWAP  (Volume Weighted Average Price)")
-        layout.addWidget(panel)
+        return self.adx_section
 
-        self.vwap_enabled = QCheckBox("Enable VWAP Filter")
-        pl.addWidget(self.vwap_enabled)
+    def _build_vwap_card(self):
+        self.vwap_section = FilterSection(
+            "VWAP  (Volume Weighted Average Price)", initially_enabled=False
+        )
+        bl = self.vwap_section.body_layout()
 
         self.vwap_condition = QComboBox()
         self.vwap_condition.addItems(["above", "below"])
@@ -328,80 +324,80 @@ class IndicatorsTab(QWidget):
             "above = only enter when price > VWAP\n"
             "below = only enter when price < VWAP"
         )
-        _form_row("Price must be:", self.vwap_condition, pl)
+        _form_row("Price must be:", self.vwap_condition, bl)
 
-    def _add_vix(self, layout):
-        panel, pl = create_panel("VIX Indicator  (Market Volatility Index)")
-        layout.addWidget(panel)
+        return self.vwap_section
 
-        self.vix_ind_enabled = QCheckBox("Enable VIX Indicator")
-        pl.addWidget(self.vix_ind_enabled)
+    def _build_vix_card(self):
+        self.vix_ind_section = FilterSection(
+            "VIX Indicator  (Market Volatility Index)", initially_enabled=False
+        )
+        bl = self.vix_ind_section.body_layout()
 
         note = QLabel(
             "Adds VIX to the indicator manager. "
-            "Use the VIX Filter in Advanced Filters to set min/max VIX levels."
+            "Use the VIX Filter in the Filters tab to set min/max VIX levels."
         )
         note.setObjectName("dim")
         note.setWordWrap(True)
-        pl.addWidget(note)
+        bl.addWidget(note)
+
+        return self.vix_ind_section
 
     # ------------------------------------------------------------------
     # Config
     # ------------------------------------------------------------------
 
     def get_config(self):
-        """Return indicators config dict matching generate_indicator_manager() format"""
-        # Determine MA type from combobox selection
-        ma_type_text = self.ma_type.currentText()
-        ma_type = 'EMA' if 'Exponential' in ma_type_text else 'SMA'
+        ma_type = 'EMA' if 'Exponential' in self.ma_type.currentText() else 'SMA'
 
         return {
             'RSI': {
-                'enabled': self.rsi_enabled.isChecked(),
-                'period': self.rsi_period.value(),
-                'oversold': self.rsi_oversold.value(),
+                'enabled':    self.rsi_section.is_enabled(),
+                'period':     self.rsi_period.value(),
+                'oversold':   self.rsi_oversold.value(),
                 'overbought': self.rsi_overbought.value(),
             },
             'MACD': {
-                'enabled': self.macd_enabled.isChecked(),
-                'fast': self.macd_fast.value(),
-                'slow': self.macd_slow.value(),
-                'signal': self.macd_signal.value(),
+                'enabled': self.macd_section.is_enabled(),
+                'fast':    self.macd_fast.value(),
+                'slow':    self.macd_slow.value(),
+                'signal':  self.macd_signal.value(),
             },
             'STOCHASTIC': {
-                'enabled': self.stoch_enabled.isChecked(),
-                'period': self.stoch_period.value(),
-                'k_smooth': self.stoch_k_smooth.value(),
-                'oversold': self.stoch_oversold.value(),
+                'enabled':    self.stoch_section.is_enabled(),
+                'period':     self.stoch_period.value(),
+                'k_smooth':   self.stoch_k_smooth.value(),
+                'oversold':   self.stoch_oversold.value(),
                 'overbought': self.stoch_overbought.value(),
             },
             'ATR': {
-                'enabled': self.atr_enabled.isChecked(),
-                'period': self.atr_period.value(),
+                'enabled':   self.atr_section.is_enabled(),
+                'period':    self.atr_period.value(),
                 'threshold': self.atr_threshold.value(),
                 'condition': self.atr_condition.currentText(),
             },
             'BBANDS': {
-                'enabled': self.bbands_enabled.isChecked(),
-                'period': self.bbands_period.value(),
+                'enabled': self.bbands_section.is_enabled(),
+                'period':  self.bbands_period.value(),
                 'std_dev': self.bbands_std_dev.value(),
             },
             'MA': {
-                'enabled': self.ma_enabled.isChecked(),
-                'period': self.ma_period.value(),
+                'enabled': self.ma_section.is_enabled(),
+                'period':  self.ma_period.value(),
                 'ma_type': ma_type,
             },
             'ADX': {
-                'enabled': self.adx_enabled.isChecked(),
-                'period': self.adx_period.value(),
+                'enabled':   self.adx_section.is_enabled(),
+                'period':    self.adx_period.value(),
                 'threshold': self.adx_threshold.value(),
                 'condition': self.adx_condition.currentText(),
             },
             'VWAP': {
-                'enabled': self.vwap_enabled.isChecked(),
+                'enabled':   self.vwap_section.is_enabled(),
                 'condition': self.vwap_condition.currentText(),
             },
             'VIX': {
-                'enabled': self.vix_ind_enabled.isChecked(),
+                'enabled': self.vix_ind_section.is_enabled(),
             },
         }

@@ -2,7 +2,7 @@
 ; Run with: iscc build\installer.iss  (from project root)
 
 #define AppName "OptionsBacktest"
-#define AppVersion "1.0.0"
+#define AppVersion "4.0.0"
 #define AppPublisher "OptionsBacktest"
 #define AppExeName "OptionsBacktest.exe"
 

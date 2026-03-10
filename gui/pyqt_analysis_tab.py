@@ -7,16 +7,25 @@ import pandas as pd
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QFileDialog, QTableWidget, QTableWidgetItem,
-    QSplitter, QComboBox, QGroupBox, QAbstractItemView, QHeaderView
+    QSplitter, QAbstractItemView, QHeaderView, QButtonGroup
 )
 from PyQt5.QtCore import Qt
 
 from .pyqt_theme import C
-from .pyqt_main_window import create_panel, create_section_header
+from .pyqt_main_window import create_panel, create_metric_card
+from .pyqt_widgets import CollapsibleSection
 from .echarts_widget import (
     EChartsWidget, create_line_chart_option, create_bar_chart_option,
     create_scatter_chart_option
 )
+
+CHART_NAMES = [
+    "Equity Curve",
+    "P&L Distribution",
+    "MAE/MFE Analysis",
+    "Win Rate by Month",
+    "Trade Duration",
+]
 
 
 class AnalysisTab(QWidget):
@@ -26,16 +35,15 @@ class AnalysisTab(QWidget):
         super().__init__()
         self.main_window = main_window
         self.trades_df = None
-
+        self._current_chart = CHART_NAMES[0]
         self._create_ui()
 
     def _create_ui(self):
-        """Create the tab UI"""
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
         layout.setContentsMargins(12, 12, 12, 12)
 
-        # Upload section
+        # ── Load Results ──────────────────────────────────────────────────
         upload_panel, upload_layout = create_panel("Load Results")
 
         upload_row = QHBoxLayout()
@@ -55,58 +63,56 @@ class AnalysisTab(QWidget):
         upload_layout.addLayout(upload_row)
         layout.addWidget(upload_panel)
 
-        # Main content splitter
-        splitter = QSplitter(Qt.Vertical)
-        layout.addWidget(splitter, 1)
+        # ── 4 Summary Cards ───────────────────────────────────────────────
+        cards_row = QHBoxLayout()
+        cards_row.setSpacing(12)
 
-        # Charts panel
+        self.card_pnl, self.lbl_pnl = create_metric_card("Total P&L", C['up'])
+        self.card_winrate, self.lbl_winrate = create_metric_card("Win Rate", None)
+        self.card_pf, self.lbl_pf = create_metric_card("Profit Factor", C['accent'])
+        self.card_sharpe, self.lbl_sharpe = create_metric_card("Sharpe Ratio", None)
+
+        cards_row.addWidget(self.card_pnl, 1)
+        cards_row.addWidget(self.card_winrate, 1)
+        cards_row.addWidget(self.card_pf, 1)
+        cards_row.addWidget(self.card_sharpe, 1)
+        layout.addLayout(cards_row)
+
+        # ── Charts Panel ──────────────────────────────────────────────────
         charts_panel = QFrame()
         charts_panel.setObjectName("panel")
         charts_layout = QVBoxLayout(charts_panel)
         charts_layout.setContentsMargins(14, 12, 14, 12)
         charts_layout.setSpacing(12)
 
-        # Chart selector
-        chart_selector = QHBoxLayout()
-        chart_selector.setSpacing(12)
+        # Pill chart selector
+        pill_row = QHBoxLayout()
+        pill_row.setSpacing(8)
+        self._chart_btn_group = QButtonGroup(self)
+        self._chart_btn_group.setExclusive(True)
 
-        chart_label = QLabel("Chart Type:")
-        chart_label.setFixedWidth(100)
-        chart_selector.addWidget(chart_label)
+        for i, name in enumerate(CHART_NAMES):
+            btn = QPushButton(name)
+            btn.setCheckable(True)
+            btn.setObjectName("pillButton")
+            btn.setChecked(i == 0)
+            self._chart_btn_group.addButton(btn, i)
+            pill_row.addWidget(btn)
 
-        self.chart_type = QComboBox()
-        self.chart_type.setFixedWidth(200)
-        self.chart_type.addItems([
-            "Equity Curve",
-            "P&L Distribution",
-            "MAE/MFE Analysis",
-            "Win Rate by Month",
-            "Trade Duration"
-        ])
-        self.chart_type.currentIndexChanged.connect(self._update_chart)
-        chart_selector.addWidget(self.chart_type)
-
-        chart_selector.addStretch()
-        charts_layout.addLayout(chart_selector)
+        pill_row.addStretch()
+        self._chart_btn_group.idClicked.connect(self._on_chart_btn)
+        charts_layout.addLayout(pill_row)
 
         # Chart widget
         self.chart = EChartsWidget()
         self.chart.setMinimumHeight(300)
         charts_layout.addWidget(self.chart)
 
-        splitter.addWidget(charts_panel)
+        layout.addWidget(charts_panel, 1)
 
-        # Statistics panel
-        stats_panel = QFrame()
-        stats_panel.setObjectName("panel")
-        stats_layout = QVBoxLayout(stats_panel)
-        stats_layout.setContentsMargins(14, 12, 14, 12)
-        stats_layout.setSpacing(8)
+        # ── Collapsible Stats Table ───────────────────────────────────────
+        stats_section = CollapsibleSection("Performance Statistics", initially_expanded=True)
 
-        stats_header = create_section_header("Performance Statistics")
-        stats_layout.addWidget(stats_header)
-
-        # Stats table
         self.stats_table = QTableWidget()
         self.stats_table.setColumnCount(4)
         self.stats_table.setHorizontalHeaderLabels(["Metric", "Value", "Metric ", "Value "])
@@ -116,18 +122,21 @@ class AnalysisTab(QWidget):
         self.stats_table.setSelectionMode(QAbstractItemView.NoSelection)
         self.stats_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.stats_table.setFocusPolicy(Qt.NoFocus)
-        stats_layout.addWidget(self.stats_table)
+        stats_section.body_layout().addWidget(self.stats_table)
 
-        splitter.addWidget(stats_panel)
+        layout.addWidget(stats_section)
 
-        # Set splitter sizes
-        splitter.setSizes([500, 300])
-
-        # Show empty state
         self._show_empty_state()
 
+    # ------------------------------------------------------------------
+    # Slots
+    # ------------------------------------------------------------------
+
+    def _on_chart_btn(self, idx):
+        self._current_chart = CHART_NAMES[idx]
+        self._update_chart()
+
     def _load_csv(self):
-        """Load a results CSV file"""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Load Results CSV",
@@ -145,21 +154,18 @@ class AnalysisTab(QWidget):
                 self.file_label.setText(f"Error: {str(e)}")
 
     def _analyze_results(self):
-        """Analyze loaded results"""
         if self.trades_df is None or self.trades_df.empty:
             return
-
-        # Calculate statistics
         self._calculate_stats()
-
-        # Update chart
         self._update_chart()
 
+    # ------------------------------------------------------------------
+    # Stats
+    # ------------------------------------------------------------------
+
     def _calculate_stats(self):
-        """Calculate performance statistics"""
         df = self.trades_df
 
-        # Try to find P&L column
         pnl_col = None
         for col in ['PnL', 'P&L', 'pnl', 'profit', 'Profit', 'NetProfit']:
             if col in df.columns:
@@ -173,19 +179,44 @@ class AnalysisTab(QWidget):
         wins = pnl[pnl > 0]
         losses = pnl[pnl < 0]
 
+        # Update summary cards
+        total_pnl = pnl.sum()
+        win_rate = len(wins) / len(df) * 100 if len(df) > 0 else 0
+        profit_factor = abs(wins.sum() / losses.sum()) if losses.sum() != 0 else 0
+        sharpe = (pnl.mean() / pnl.std()) if pnl.std() != 0 else 0
+
+        pnl_color = C['up'] if total_pnl >= 0 else C['down']
+        self.lbl_pnl.setStyleSheet(f"font-size: 17px; font-weight: bold; color: {pnl_color};")
+        self.lbl_pnl.setText(f"${total_pnl:,.0f}")
+        self.lbl_winrate.setText(f"{win_rate:.1f}%")
+        self.lbl_pf.setText(f"{profit_factor:.2f}")
+        self.lbl_sharpe.setText(f"{sharpe:.2f}")
+
+        # Stats table
         stats = [
-            ("Total Trades", len(df), "Win Rate", f"{len(wins)/len(df)*100:.1f}%" if len(df) > 0 else "N/A"),
+            ("Total Trades", len(df), "Win Rate", f"{win_rate:.1f}%"),
             ("Winners", len(wins), "Losers", len(losses)),
             ("Total P&L", f"${pnl.sum():,.2f}", "Avg P&L", f"${pnl.mean():,.2f}"),
-            ("Avg Win", f"${wins.mean():,.2f}" if len(wins) > 0 else "N/A",
-             "Avg Loss", f"${losses.mean():,.2f}" if len(losses) > 0 else "N/A"),
-            ("Max Win", f"${wins.max():,.2f}" if len(wins) > 0 else "N/A",
-             "Max Loss", f"${losses.min():,.2f}" if len(losses) > 0 else "N/A"),
-            ("Profit Factor", f"{abs(wins.sum()/losses.sum()):.2f}" if losses.sum() != 0 else "N/A",
-             "Expectancy", f"${pnl.mean():,.2f}"),
+            (
+                "Avg Win",
+                f"${wins.mean():,.2f}" if len(wins) > 0 else "N/A",
+                "Avg Loss",
+                f"${losses.mean():,.2f}" if len(losses) > 0 else "N/A",
+            ),
+            (
+                "Max Win",
+                f"${wins.max():,.2f}" if len(wins) > 0 else "N/A",
+                "Max Loss",
+                f"${losses.min():,.2f}" if len(losses) > 0 else "N/A",
+            ),
+            (
+                "Profit Factor",
+                f"{profit_factor:.2f}",
+                "Expectancy",
+                f"${pnl.mean():,.2f}",
+            ),
         ]
 
-        # Update table
         self.stats_table.setRowCount(len(stats))
         for row, (m1, v1, m2, v2) in enumerate(stats):
             self.stats_table.setItem(row, 0, QTableWidgetItem(str(m1)))
@@ -193,7 +224,6 @@ class AnalysisTab(QWidget):
             self.stats_table.setItem(row, 2, QTableWidgetItem(str(m2)))
             self.stats_table.setItem(row, 3, QTableWidgetItem(str(v2)))
 
-            # Color P&L values
             if isinstance(v1, str) and '$' in v1:
                 item = self.stats_table.item(row, 1)
                 if v1.startswith('$-'):
@@ -201,15 +231,15 @@ class AnalysisTab(QWidget):
                 elif not v1.startswith('$0'):
                     item.setForeground(Qt.GlobalColor.green)
 
+    # ------------------------------------------------------------------
+    # Charts
+    # ------------------------------------------------------------------
+
     def _update_chart(self):
-        """Update the chart based on selection"""
         if self.trades_df is None or self.trades_df.empty:
             return
 
-        chart_type = self.chart_type.currentText()
         df = self.trades_df
-
-        # Find P&L column
         pnl_col = None
         for col in ['PnL', 'P&L', 'pnl', 'profit', 'Profit', 'NetProfit']:
             if col in df.columns:
@@ -219,11 +249,11 @@ class AnalysisTab(QWidget):
         if pnl_col is None:
             return
 
+        chart_type = self._current_chart
+
         if chart_type == "Equity Curve":
-            # Cumulative P&L
             cumsum = df[pnl_col].cumsum().tolist()
             x_data = list(range(1, len(cumsum) + 1))
-
             option = create_line_chart_option(
                 "Equity Curve",
                 [str(x) for x in x_data],
@@ -233,12 +263,9 @@ class AnalysisTab(QWidget):
             self.chart.set_option(option)
 
         elif chart_type == "P&L Distribution":
-            # Histogram
-            pnl = df[pnl_col].tolist()
-            bins = 20
             import numpy as np
-            hist, edges = np.histogram(pnl, bins=bins)
-
+            pnl = df[pnl_col].tolist()
+            hist, edges = np.histogram(pnl, bins=20)
             option = {
                 'title': {'text': 'P&L Distribution', 'left': 'center'},
                 'tooltip': {'trigger': 'axis'},
@@ -252,12 +279,11 @@ class AnalysisTab(QWidget):
                     'data': hist.tolist(),
                     'itemStyle': {
                         'color': {
-                            'type': 'linear',
-                            'x': 0, 'y': 0, 'x2': 1, 'y2': 0,
+                            'type': 'linear', 'x': 0, 'y': 0, 'x2': 1, 'y2': 0,
                             'colorStops': [
                                 {'offset': 0, 'color': C['down']},
                                 {'offset': 0.5, 'color': C['yellow']},
-                                {'offset': 1, 'color': C['up']}
+                                {'offset': 1, 'color': C['up']},
                             ]
                         }
                     }
@@ -266,24 +292,16 @@ class AnalysisTab(QWidget):
             self.chart.set_option(option)
 
         elif chart_type == "MAE/MFE Analysis":
-            # Scatter plot of MAE vs MFE
-            mae_col = None
-            mfe_col = None
-            for col in df.columns:
-                if 'mae' in col.lower():
-                    mae_col = col
-                if 'mfe' in col.lower():
-                    mfe_col = col
-
+            mae_col = next((c for c in df.columns if 'mae' in c.lower()), None)
+            mfe_col = next((c for c in df.columns if 'mfe' in c.lower()), None)
             if mae_col and mfe_col:
                 wins = df[df[pnl_col] > 0]
                 losses = df[df[pnl_col] <= 0]
-
                 option = create_scatter_chart_option(
                     "MAE vs MFE Analysis",
                     [
-                        {'name': 'Winners', 'data': [[row[mae_col], row[mfe_col]] for _, row in wins.iterrows()]},
-                        {'name': 'Losers', 'data': [[row[mae_col], row[mfe_col]] for _, row in losses.iterrows()]}
+                        {'name': 'Winners', 'data': [[r[mae_col], r[mfe_col]] for _, r in wins.iterrows()]},
+                        {'name': 'Losers', 'data': [[r[mae_col], r[mfe_col]] for _, r in losses.iterrows()]},
                     ],
                     "MAE ($)", "MFE ($)"
                 )
@@ -292,21 +310,14 @@ class AnalysisTab(QWidget):
                 self.chart.set_option(option)
 
         elif chart_type == "Win Rate by Month":
-            # Find date column
-            date_col = None
-            for col in df.columns:
-                if 'date' in col.lower() or 'time' in col.lower():
-                    date_col = col
-                    break
-
+            date_col = next(
+                (c for c in df.columns if 'date' in c.lower() or 'time' in c.lower()), None
+            )
             if date_col:
                 df['_month'] = pd.to_datetime(df[date_col]).dt.to_period('M').astype(str)
-                monthly = df.groupby('_month').agg({
-                    pnl_col: ['count', lambda x: (x > 0).sum()]
-                })
+                monthly = df.groupby('_month').agg({pnl_col: ['count', lambda x: (x > 0).sum()]})
                 monthly.columns = ['total', 'wins']
                 monthly['win_rate'] = (monthly['wins'] / monthly['total'] * 100).round(1)
-
                 option = create_bar_chart_option(
                     "Win Rate by Month",
                     monthly.index.tolist(),
@@ -316,36 +327,26 @@ class AnalysisTab(QWidget):
                 self.chart.set_option(option)
 
         elif chart_type == "Trade Duration":
-            # Find duration column or calculate
-            duration_col = None
-            for col in df.columns:
-                if 'duration' in col.lower() or 'days' in col.lower():
-                    duration_col = col
-                    break
-
+            duration_col = next(
+                (c for c in df.columns if 'duration' in c.lower() or 'days' in c.lower()), None
+            )
             if duration_col:
                 durations = df[duration_col].tolist()
-                x_data = list(range(1, len(durations) + 1))
-
                 option = create_bar_chart_option(
                     "Trade Duration",
-                    [str(x) for x in x_data],
+                    [str(i) for i in range(1, len(durations) + 1)],
                     [{'name': 'Duration (days)', 'data': durations}],
                     "Days"
                 )
                 self.chart.set_option(option)
 
     def _show_empty_state(self):
-        """Show empty state chart"""
         option = {
             'title': {
                 'text': 'Load a results CSV to view analysis',
                 'left': 'center',
                 'top': 'center',
-                'textStyle': {
-                    'color': C['dim'],
-                    'fontSize': 16
-                }
+                'textStyle': {'color': C['dim'], 'fontSize': 16}
             }
         }
         self.chart.set_option(option)

@@ -19,6 +19,9 @@ DARK_COLORS = {
     "input_border": "#2d2d2d",
     "btn_bg": "#222222",
     "btn_hover": "#2d2d2d",
+    "sidebar_bg": "#111111",
+    "sidebar_active": "#1e1e1e",
+    "shadow_color": "#000000",
 }
 
 LIGHT_COLORS = {
@@ -36,6 +39,9 @@ LIGHT_COLORS = {
     "input_border": "#d0d7de",
     "btn_bg": "#f6f8fa",
     "btn_hover": "#eaeef2",
+    "sidebar_bg": "#f0f2f5",
+    "sidebar_active": "#e8eaed",
+    "shadow_color": "#c8cdd4",
 }
 
 # Active color palette (default dark)
@@ -43,9 +49,9 @@ C = dict(DARK_COLORS)
 
 # Font settings - use cross-platform monospace fonts
 FONT_FAMILY = "SF Mono, Menlo, Monaco, Consolas, monospace"
-FONT_SIZE = 15
-FONT_SIZE_LARGE = 17
-FONT_SIZE_SMALL = 13
+FONT_SIZE = 13
+FONT_SIZE_LARGE = 15
+FONT_SIZE_SMALL = 11
 
 
 def build_stylesheet(colors):
@@ -62,7 +68,105 @@ QMainWindow, QWidget {{
 QFrame#panel {{
     background-color: {c['card_bg']};
     border: 1px solid {c['card_border']};
+    border-bottom: 2px solid {c['shadow_color']};
+    border-right: 2px solid {c['shadow_color']};
     border-radius: 8px;
+}}
+
+QFrame#sidebar {{
+    background-color: {c['sidebar_bg']};
+    border-right: 1px solid {c['card_border']};
+    border-radius: 0px;
+}}
+
+QToolButton#navBtn {{
+    background-color: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 0px;
+    color: {c['dim']};
+    font-size: 10px;
+    padding: 8px 4px;
+    text-align: center;
+}}
+
+QToolButton#navBtn:checked {{
+    border-left: 3px solid {c['accent']};
+    background-color: {c['sidebar_active']};
+    color: {c['accent']};
+    font-weight: bold;
+}}
+
+QToolButton#navBtn:hover:!checked {{
+    background-color: {c['alt_bg']};
+    color: {c['text']};
+}}
+
+QPushButton#pillButton {{
+    border-radius: 12px;
+    padding: 5px 14px;
+    border: 1px solid {c['card_border']};
+    background-color: {c['btn_bg']};
+    color: {c['dim']};
+    font-size: 12px;
+    font-weight: normal;
+}}
+
+QPushButton#pillButton:checked {{
+    background-color: {c['accent']};
+    color: {c['bg']};
+    border-color: {c['accent']};
+    font-weight: bold;
+}}
+
+QPushButton#pillButton:hover:!checked {{
+    background-color: {c['btn_hover']};
+    color: {c['text']};
+}}
+
+QFrame#metricCard {{
+    background-color: {c['alt_bg']};
+    border: 1px solid {c['card_border']};
+    border-bottom: 2px solid {c['shadow_color']};
+    border-right: 2px solid {c['shadow_color']};
+    border-radius: 8px;
+}}
+
+QPushButton#collapsibleHeader {{
+    background-color: {c['alt_bg']};
+    border: none;
+    border-radius: 6px;
+    color: {c['text']};
+    font-weight: bold;
+    font-size: {FONT_SIZE_LARGE}px;
+    padding: 10px 14px;
+    text-align: left;
+}}
+
+QPushButton#collapsibleHeader:hover {{
+    background-color: {c['btn_hover']};
+}}
+
+QPushButton#collapsibleHeader:checked {{
+    color: {c['accent']};
+}}
+
+QListWidget#dropZone {{
+    border: 2px dashed {c['card_border']};
+    border-radius: 8px;
+    background-color: {c['alt_bg']};
+    color: {c['dim']};
+    font-size: 13px;
+    min-height: 80px;
+}}
+
+QListWidget#dropZone:hover {{
+    border-color: {c['accent']};
+}}
+
+QWidget#filterHeader {{
+    background-color: transparent;
+    border-radius: 6px;
 }}
 
 QLabel {{
